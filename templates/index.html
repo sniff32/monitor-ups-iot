@@ -3,55 +3,343 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Monitor UPS IoT</title>
+  <meta name="theme-color" content="#0a8fc5">
+  <title>Monitor UPS IoT | WiMobile</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; background:#07111f; color:#e8f0fa }
-    * { box-sizing:border-box }
-    body { margin:0; min-height:100vh; background:radial-gradient(circle at 85% 0,#17375e 0,transparent 34rem),#07111f }
-    header,main { max-width:1400px; margin:auto; padding:24px }
-    header { display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid #21344c }
-    h1,h2,p { margin-top:0 } h1 { margin-bottom:5px } .muted { color:#96a9c1 }
-    button,input { font:inherit; border-radius:9px; padding:11px 13px }
-    button { cursor:pointer; color:white; background:#1677ff; border:0; font-weight:700 }
-    button.secondary { background:#273951 } button:disabled { opacity:.55; cursor:not-allowed }
-    .hidden { display:none!important }
-    .login { max-width:430px; margin:55px auto; padding:26px; background:#0e1d31; border:1px solid #29415f; border-radius:16px }
-    label { display:block; color:#b3c2d4; margin:16px 0 6px }
-    input { width:100%; color:#fff; background:#071423; border:1px solid #36506d }
-    .login button { width:100%; margin-top:18px }
-    .message { min-height:23px; margin-top:14px; color:#fda4af }
-    .cards { display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)); gap:14px; margin:22px 0 }
-    .card { padding:18px; background:#0e1d31e8; border:1px solid #29415f; border-radius:14px }
-    .label { color:#96a9c1; font-size:12px; text-transform:uppercase; letter-spacing:.06em }
-    .value { display:block; margin-top:7px; font-size:25px; font-weight:800 }
-    .online { color:#4ade80 } .offline { color:#fb7185 }
-    .toolbar { display:flex; justify-content:space-between; align-items:end; gap:12px; margin-bottom:12px }
-    .table-wrap { overflow:auto; border:1px solid #29415f; border-radius:14px; background:#0e1d31e8 }
-    table { width:100%; min-width:1050px; border-collapse:collapse }
-    th,td { padding:12px 13px; text-align:left; border-bottom:1px solid #21344c; white-space:nowrap }
-    th { color:#aebed1; background:#132740; font-size:12px; text-transform:uppercase }
-    .pill { padding:5px 9px; border-radius:999px; font-size:12px; font-weight:800; color:#86efac; background:#22c55e22; border:1px solid #22c55e66 }
-    .empty { text-align:center; color:#96a9c1; padding:30px }
-    @media(max-width:800px){ header { align-items:flex-start; flex-direction:column } .cards{grid-template-columns:repeat(2,1fr)} }
+    :root {
+      color-scheme: light;
+      font-family: "Segoe UI", Inter, Arial, sans-serif;
+      --brand-blue: #0c91c7;
+      --brand-blue-deep: #075578;
+      --brand-blue-soft: #eaf7fd;
+      --brand-orange: #ed6d05;
+      --ink: #18374d;
+      --muted: #667f91;
+      --line: #cfe3ee;
+      --white: #fff;
+      background: #f2f8fc;
+      color: var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #f2f8fc; }
+    h1, h2, p { margin-top: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display: none !important; }
+
+    /* Inicio de sesión */
+    .auth-view {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(390px, .84fr);
+      min-height: 100vh;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 17% 16%, rgba(55, 173, 224, .18), transparent 19rem),
+        radial-gradient(circle at 76% 74%, rgba(12, 145, 199, .12), transparent 22rem),
+        linear-gradient(135deg, #fafdff 0%, #edf8fe 53%, #f7fbfe 100%);
+    }
+
+    .auth-view::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      opacity: .5;
+      background-image:
+        linear-gradient(30deg, transparent 48.8%, rgba(70, 163, 207, .22) 49.3%, rgba(70, 163, 207, .22) 50%, transparent 50.5%),
+        linear-gradient(150deg, transparent 48.8%, rgba(70, 163, 207, .17) 49.3%, rgba(70, 163, 207, .17) 50%, transparent 50.5%);
+      background-size: 250px 180px, 300px 220px;
+      background-position: -55px 10px, 70px 65px;
+    }
+
+    .auth-view::after {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      inset: auto -5% -92px -5%;
+      height: 210px;
+      background:
+        radial-gradient(circle at 5% 32%, #fff 0 67px, transparent 69px),
+        radial-gradient(circle at 17% 24%, #4bb4e3 0 91px, transparent 93px),
+        radial-gradient(circle at 31% 42%, #fff 0 74px, transparent 76px),
+        radial-gradient(circle at 46% 22%, #38a7d8 0 102px, transparent 104px),
+        radial-gradient(circle at 61% 42%, #fff 0 83px, transparent 85px),
+        radial-gradient(circle at 77% 25%, #60bce5 0 96px, transparent 98px),
+        radial-gradient(circle at 92% 40%, #fff 0 78px, transparent 80px);
+      opacity: .95;
+    }
+
+    .brand-hero {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+      padding: 72px 7vw 150px;
+    }
+
+    .brand-content { width: min(680px, 100%); position: relative; z-index: 2; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 24px;
+      color: var(--brand-blue-deep);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: ""; width: 31px; height: 3px; border-radius: 9px; background: var(--brand-orange); }
+
+    .brand-lockup { display: flex; align-items: center; gap: 25px; }
+    .brand-logo {
+      width: clamp(145px, 16vw, 205px);
+      aspect-ratio: 1;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 18px rgba(8, 91, 129, .15));
+      mix-blend-mode: multiply;
+    }
+    .brand-copy h1 { margin-bottom: 10px; font-size: clamp(34px, 4.4vw, 64px); line-height: .98; letter-spacing: -.045em; }
+    .brand-copy h1 span { color: var(--brand-blue); }
+    .brand-copy p { max-width: 470px; margin-bottom: 0; color: var(--muted); font-size: clamp(16px, 1.55vw, 20px); line-height: 1.6; }
+
+    .feature-row { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 34px; }
+    .feature-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 14px;
+      border: 1px solid rgba(12, 145, 199, .18);
+      border-radius: 999px;
+      color: #32627d;
+      background: rgba(255, 255, 255, .76);
+      box-shadow: 0 8px 22px rgba(36, 112, 150, .07);
+      backdrop-filter: blur(8px);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .feature-chip svg { width: 18px; height: 18px; color: var(--brand-blue); }
+
+    .network-node { position: absolute; width: 13px; height: 13px; border: 4px solid #b8dff2; border-radius: 50%; background: #fff; box-shadow: 0 0 0 7px rgba(80, 176, 220, .08); }
+    .node-a { top: 12%; left: 9%; }
+    .node-b { top: 23%; right: 12%; width: 20px; height: 20px; }
+    .node-c { bottom: 23%; left: 16%; width: 17px; height: 17px; }
+    .node-d { bottom: 17%; right: 20%; }
+
+    .signal-mark {
+      position: absolute;
+      right: 7%;
+      top: 14%;
+      width: 112px;
+      height: 112px;
+      border: 2px solid rgba(12, 145, 199, .14);
+      border-radius: 50%;
+    }
+    .signal-mark::before, .signal-mark::after { content: ""; position: absolute; border: 2px solid rgba(12, 145, 199, .13); border-radius: 50%; }
+    .signal-mark::before { inset: 18px; }
+    .signal-mark::after { inset: 37px; background: rgba(237, 109, 5, .7); border: 0; }
+
+    .auth-panel {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 52px clamp(28px, 5vw, 84px) 120px;
+    }
+    .auth-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      width: 1px;
+      background: linear-gradient(transparent 5%, rgba(12, 145, 199, .2) 25%, rgba(12, 145, 199, .2) 75%, transparent 95%);
+    }
+
+    .login-card {
+      width: min(455px, 100%);
+      padding: clamp(30px, 4vw, 48px);
+      border: 1px solid rgba(123, 188, 218, .4);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, .94);
+      box-shadow: 0 25px 70px rgba(34, 100, 133, .17), 0 3px 13px rgba(34, 100, 133, .08);
+      backdrop-filter: blur(14px);
+    }
+    .mobile-logo { display: none; width: 92px; margin: 0 auto 18px; mix-blend-mode: multiply; }
+    .login-card h2 { margin-bottom: 9px; font-size: clamp(29px, 3vw, 40px); line-height: 1.1; letter-spacing: -.025em; color: var(--brand-blue-deep); }
+    .login-card h2 .accent { color: var(--brand-orange); }
+    .login-intro { margin-bottom: 27px; color: var(--muted); line-height: 1.55; }
+
+    .form-field { margin-top: 17px; }
+    .form-field label { display: block; margin-bottom: 7px; color: #345b72; font-size: 13px; font-weight: 750; }
+    .input-shell { position: relative; }
+    .input-shell svg { position: absolute; top: 50%; left: 14px; width: 20px; height: 20px; color: #7c9cac; transform: translateY(-50%); pointer-events: none; }
+    .input-shell input {
+      width: 100%;
+      min-height: 53px;
+      padding: 12px 47px 12px 46px;
+      border: 1px solid #cbdde7;
+      border-radius: 11px;
+      outline: none;
+      color: var(--ink);
+      background: #fbfdff;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .input-shell input::placeholder { color: #91a6b2; }
+    .input-shell input:focus { border-color: var(--brand-blue); background: #fff; box-shadow: 0 0 0 4px rgba(12, 145, 199, .12); }
+    .password-toggle { position: absolute; top: 50%; right: 9px; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 8px; color: #648799; background: transparent; transform: translateY(-50%); }
+    .password-toggle:hover { background: var(--brand-blue-soft); }
+    .password-toggle svg { position: static; width: 20px; height: 20px; transform: none; pointer-events: auto; }
+
+    .login-actions { display: grid; grid-template-columns: 1fr auto; gap: 11px; margin-top: 25px; }
+    .primary-button, .reset-button, .app-button {
+      min-height: 48px;
+      border-radius: 10px;
+      font-weight: 800;
+      transition: transform .15s, box-shadow .2s, background .2s;
+    }
+    .primary-button { padding: 11px 19px; border: 0; color: #fff; background: linear-gradient(135deg, var(--brand-blue), #087eb4); box-shadow: 0 10px 22px rgba(12, 145, 199, .24); }
+    .primary-button:hover { transform: translateY(-1px); box-shadow: 0 13px 27px rgba(12, 145, 199, .3); }
+    .reset-button { padding: 11px 17px; border: 1px solid #9cc9de; color: var(--brand-blue-deep); background: #fff; }
+    .reset-button:hover { background: var(--brand-blue-soft); }
+    button:disabled { opacity: .6; cursor: not-allowed; transform: none !important; }
+    .message { min-height: 24px; margin: 14px 0 0; color: #b42318; font-size: 13px; line-height: 1.45; }
+    .login-footer { margin: 8px 0 0; color: #8aa0ad; font-size: 12px; text-align: center; }
+    .login-footer strong { color: var(--brand-blue-deep); }
+
+    /* Dashboard existente */
+    .app-header { display: none; max-width: 1400px; margin: auto; padding: 24px; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #21344c; }
+    .app-title { display: flex; align-items: center; gap: 13px; }
+    .app-title img { width: 50px; height: 50px; object-fit: contain; border-radius: 9px; background: #fff; }
+    .app-title h1 { margin-bottom: 3px; color: #e8f0fa; font-size: 26px; }
+    .app-title p { margin-bottom: 0; color: #96a9c1; }
+    body.session-active { color-scheme: dark; color: #e8f0fa; background: radial-gradient(circle at 85% 0, #17375e 0, transparent 34rem), #07111f; }
+    body.session-active .app-header { display: flex; }
+    body.session-active main { max-width: 1400px; min-height: auto; margin: auto; padding: 24px; }
+    .app-button { padding: 11px 15px; border: 0; color: #fff; background: #273951; }
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 14px; margin: 22px 0; }
+    .card { padding: 18px; border: 1px solid #29415f; border-radius: 14px; background: #0e1d31e8; }
+    .label { color: #96a9c1; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+    .value { display: block; margin-top: 7px; font-size: 25px; font-weight: 800; }
+    .online { color: #4ade80; }
+    .toolbar { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .toolbar h2 { margin-bottom: 3px; }
+    .muted { color: #96a9c1; }
+    .table-wrap { overflow: auto; border: 1px solid #29415f; border-radius: 14px; background: #0e1d31e8; }
+    table { width: 100%; min-width: 1050px; border-collapse: collapse; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid #21344c; text-align: left; white-space: nowrap; }
+    th { color: #aebed1; background: #132740; font-size: 12px; text-transform: uppercase; }
+    .pill { padding: 5px 9px; border: 1px solid #22c55e66; border-radius: 999px; color: #86efac; background: #22c55e22; font-size: 12px; font-weight: 800; }
+    .empty { padding: 30px; color: #96a9c1; text-align: center; }
+
+    @media (max-width: 980px) {
+      .auth-view { grid-template-columns: 1fr; }
+      .brand-hero { min-height: 34vh; padding: 46px 28px 25px; text-align: center; }
+      .brand-lockup { justify-content: center; }
+      .brand-copy p { margin-inline: auto; }
+      .feature-row { justify-content: center; }
+      .auth-panel { align-items: flex-start; padding: 18px 24px 135px; }
+      .auth-panel::before { display: none; }
+      .signal-mark { right: 7%; top: 8%; width: 75px; height: 75px; }
+      .signal-mark::after { inset: 26px; }
+      .auth-view::after { bottom: -110px; }
+    }
+
+    @media (max-width: 640px) {
+      .brand-hero { display: none; }
+      .auth-panel { min-height: 100vh; align-items: center; padding: 28px 18px 125px; }
+      .mobile-logo { display: block; }
+      .login-card { padding: 28px 22px; border-radius: 19px; }
+      .login-card h2, .login-intro { text-align: center; }
+      .login-actions { grid-template-columns: 1fr; }
+      .login-actions button { width: 100%; }
+      body.session-active .app-header { align-items: flex-start; flex-direction: column; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <div><h1>Monitor UPS IoT</h1><p class="muted">Telemetría disponible desde cualquier dispositivo</p></div>
-    <button id="logout" class="secondary hidden">Cerrar sesión</button>
+  <header class="app-header">
+    <div class="app-title">
+      <img src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
+      <div><h1>Monitor UPS IoT</h1><p>Telemetría disponible desde cualquier dispositivo</p></div>
+    </div>
+    <button id="logout" class="app-button hidden">Cerrar sesión</button>
   </header>
 
   <main>
-    <section id="login" class="login">
-      <h2>Iniciar sesión</h2>
-      <p class="muted">Utiliza el usuario creado en Supabase.</p>
-      <form id="login-form">
-        <label for="email">Correo electrónico</label><input id="email" type="email" required autocomplete="username">
-        <label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password">
-        <button id="login-button" type="submit">Entrar</button>
-      </form>
-      <div id="login-message" class="message"></div>
+    <section id="login" class="auth-view">
+      <div class="brand-hero" aria-hidden="true">
+        <span class="network-node node-a"></span><span class="network-node node-b"></span>
+        <span class="network-node node-c"></span><span class="network-node node-d"></span>
+        <span class="signal-mark"></span>
+        <div class="brand-content">
+          <span class="eyebrow">Plataforma de monitoreo</span>
+          <div class="brand-lockup">
+            <img class="brand-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="">
+            <div class="brand-copy">
+              <h1>Monitor <span>UPS IoT</span></h1>
+              <p>Supervisión segura y en tiempo real para mantener tus equipos siempre conectados.</p>
+            </div>
+          </div>
+          <div class="feature-row">
+            <span class="feature-chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m6 10V5m6 14v-7m4 7H2"/></svg>
+              Telemetría en vivo
+            </span>
+            <span class="feature-chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+              Acceso seguro
+            </span>
+            <span class="feature-chip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12.6a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 20h.01M2 9a15 15 0 0 1 20 0"/></svg>
+              Disponible en cualquier lugar
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-panel">
+        <section class="login-card" aria-labelledby="login-title">
+          <img class="mobile-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
+          <h2 id="login-title"><span class="accent">Inicio</span> de sesión</h2>
+          <p class="login-intro">Ingresa tus datos para consultar el estado de los dispositivos UPS.</p>
+          <form id="login-form">
+            <div class="form-field">
+              <label for="email">Correo electrónico</label>
+              <div class="input-shell">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m4 6 8 6 8-6"/></svg>
+                <input id="email" type="email" required autocomplete="username" placeholder="nombre@empresa.com">
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="password">Contraseña</label>
+              <div class="input-shell">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                <input id="password" type="password" required autocomplete="current-password" placeholder="Escribe tu contraseña">
+                <button id="toggle-password" class="password-toggle" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="login-actions">
+              <button id="login-button" class="primary-button" type="submit">Iniciar sesión</button>
+              <button id="reset-login" class="reset-button" type="reset">Restablecer</button>
+            </div>
+          </form>
+          <div id="login-message" class="message" role="status" aria-live="polite"></div>
+          <p class="login-footer">Acceso autorizado · <strong>WiMobile</strong></p>
+        </section>
+      </div>
     </section>
 
     <section id="dashboard" class="hidden">
@@ -61,40 +349,100 @@
         <article class="card"><span class="label">Último dispositivo</span><span id="last-device" class="value">—</span></article>
         <article class="card"><span class="label">Actualización</span><span id="update-state" class="value">—</span></article>
       </div>
-      <div class="toolbar"><div><h2>Historial de telemetría</h2><span id="last-update" class="muted">Cargando…</span></div><button id="refresh" class="secondary">Actualizar</button></div>
-      <div class="table-wrap"><table><thead><tr><th>Fecha y hora</th><th>Dispositivo</th><th>Secuencia</th><th>Estado</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="empty">Cargando registros…</td></tr></tbody></table></div>
+      <div class="toolbar">
+        <div><h2>Historial de telemetría</h2><span id="last-update" class="muted">Cargando…</span></div>
+        <button id="refresh" class="app-button">Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha y hora</th><th>Dispositivo</th><th>Secuencia</th><th>Estado</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8" class="empty">Cargando registros…</td></tr></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
   <script>
     const config = { url: {{ supabase_url|tojson }}, key: {{ supabase_publishable_key|tojson }}, error: {{ configuration_error|tojson }} };
     const client = config.url && config.key ? supabase.createClient(config.url, config.key) : null;
-    const login = document.querySelector('#login'), dashboard = document.querySelector('#dashboard'), logout = document.querySelector('#logout');
-    const rows = document.querySelector('#rows'), message = document.querySelector('#login-message');
+    const login = document.querySelector('#login');
+    const dashboard = document.querySelector('#dashboard');
+    const logout = document.querySelector('#logout');
+    const rows = document.querySelector('#rows');
+    const message = document.querySelector('#login-message');
+    const loginButton = document.querySelector('#login-button');
+    const passwordInput = document.querySelector('#password');
+    const passwordToggle = document.querySelector('#toggle-password');
     const esc = value => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-    function showSession(active){ login.classList.toggle('hidden',active); dashboard.classList.toggle('hidden',!active); logout.classList.toggle('hidden',!active); }
-    function render(records){
-      document.querySelector('#count').textContent=records.length;
-      document.querySelector('#last-device').textContent=records[0]?.device_id ?? '—';
-      rows.innerHTML=records.length ? records.map(r=>`<tr><td>${esc(new Date(r.received_at).toLocaleString('es-MX'))}</td><td>${esc(r.device_id)}</td><td>${esc(r.sequence)}</td><td><span class="pill">${esc(r.status)}</span></td><td>${esc(r.input_voltage)} V</td><td>${esc(r.output_voltage)} V</td><td>${esc(r.battery_voltage)} V</td><td>${esc(r.load_percent)} %</td></tr>`).join('') : '<tr><td colspan="8" class="empty">Todavía no hay telemetría.</td></tr>';
+
+    function showSession(active) {
+      login.classList.toggle('hidden', active);
+      dashboard.classList.toggle('hidden', !active);
+      logout.classList.toggle('hidden', !active);
+      document.body.classList.toggle('session-active', active);
     }
-    async function loadRecords(){
-      document.querySelector('#update-state').textContent='Cargando';
-      const {data,error}=await client.from('telemetry').select('*').order('received_at',{ascending:false}).limit(200);
-      if(error){ document.querySelector('#last-update').textContent='Error: '+error.message; document.querySelector('#update-state').textContent='Error'; return; }
-      render(data); document.querySelector('#last-update').textContent='Actualizado: '+new Date().toLocaleTimeString('es-MX'); document.querySelector('#update-state').textContent='En vivo';
+
+    function render(records) {
+      document.querySelector('#count').textContent = records.length;
+      document.querySelector('#last-device').textContent = records[0]?.device_id ?? '—';
+      rows.innerHTML = records.length
+        ? records.map(r => `<tr><td>${esc(new Date(r.received_at).toLocaleString('es-MX'))}</td><td>${esc(r.device_id)}</td><td>${esc(r.sequence)}</td><td><span class="pill">${esc(r.status)}</span></td><td>${esc(r.input_voltage)} V</td><td>${esc(r.output_voltage)} V</td><td>${esc(r.battery_voltage)} V</td><td>${esc(r.load_percent)} %</td></tr>`).join('')
+        : '<tr><td colspan="8" class="empty">Todavía no hay telemetría.</td></tr>';
     }
-    document.querySelector('#login-form').addEventListener('submit',async e=>{
-      e.preventDefault(); message.textContent='Ingresando…';
-      const {error}=await client.auth.signInWithPassword({email:document.querySelector('#email').value,password:document.querySelector('#password').value});
-      message.textContent=error ? 'No se pudo iniciar sesión: '+error.message : '';
+
+    async function loadRecords() {
+      document.querySelector('#update-state').textContent = 'Cargando';
+      const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).limit(200);
+      if (error) {
+        document.querySelector('#last-update').textContent = 'Error: ' + error.message;
+        document.querySelector('#update-state').textContent = 'Error';
+        return;
+      }
+      render(data);
+      document.querySelector('#last-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-MX');
+      document.querySelector('#update-state').textContent = 'En vivo';
+    }
+
+    document.querySelector('#login-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!client) return;
+      message.textContent = 'Ingresando…';
+      loginButton.disabled = true;
+      const { error } = await client.auth.signInWithPassword({
+        email: document.querySelector('#email').value,
+        password: passwordInput.value
+      });
+      loginButton.disabled = false;
+      message.textContent = error ? 'No se pudo iniciar sesión. Verifica tu correo y contraseña.' : '';
     });
-    logout.addEventListener('click',()=>client.auth.signOut()); document.querySelector('#refresh').addEventListener('click',loadRecords);
-    if(!client){ message.textContent='Configuración incompleta en Render: '+config.error; }
-    else {
-      client.auth.onAuthStateChange((_event,session)=>{ showSession(Boolean(session)); if(session) setTimeout(loadRecords,0); });
-      client.channel('telemetry-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'telemetry'},()=>loadRecords()).subscribe();
-      setInterval(()=>{ if(!dashboard.classList.contains('hidden')) loadRecords(); },5000);
+
+    document.querySelector('#login-form').addEventListener('reset', () => {
+      message.textContent = '';
+      setTimeout(() => document.querySelector('#email').focus(), 0);
+    });
+
+    passwordToggle.addEventListener('click', () => {
+      const showing = passwordInput.type === 'text';
+      passwordInput.type = showing ? 'password' : 'text';
+      passwordToggle.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+      passwordToggle.setAttribute('title', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
+    });
+
+    logout.addEventListener('click', () => client.auth.signOut());
+    document.querySelector('#refresh').addEventListener('click', loadRecords);
+
+    if (!client) {
+      loginButton.disabled = true;
+      message.textContent = 'Configuración incompleta en Render: ' + config.error;
+    } else {
+      client.auth.onAuthStateChange((_event, session) => {
+        showSession(Boolean(session));
+        if (session) setTimeout(loadRecords, 0);
+      });
+      client.channel('telemetry-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => loadRecords()).subscribe();
+      setInterval(() => {
+        if (!dashboard.classList.contains('hidden')) loadRecords();
+      }, 5000);
     }
   </script>
 </body>
