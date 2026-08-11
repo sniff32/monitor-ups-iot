@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitor UPS IoT</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, Arial, sans-serif; background:#07111f; color:#e8f0fa }
+    * { box-sizing:border-box }
+    body { margin:0; min-height:100vh; background:radial-gradient(circle at 85% 0,#17375e 0,transparent 34rem),#07111f }
+    header,main { max-width:1400px; margin:auto; padding:24px }
+    header { display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid #21344c }
+    h1,h2,p { margin-top:0 } h1 { margin-bottom:5px } .muted { color:#96a9c1 }
+    button,input { font:inherit; border-radius:9px; padding:11px 13px }
+    button { cursor:pointer; color:white; background:#1677ff; border:0; font-weight:700 }
+    button.secondary { background:#273951 } button:disabled { opacity:.55; cursor:not-allowed }
+    .hidden { display:none!important }
+    .login { max-width:430px; margin:55px auto; padding:26px; background:#0e1d31; border:1px solid #29415f; border-radius:16px }
+    label { display:block; color:#b3c2d4; margin:16px 0 6px }
+    input { width:100%; color:#fff; background:#071423; border:1px solid #36506d }
+    .login button { width:100%; margin-top:18px }
+    .message { min-height:23px; margin-top:14px; color:#fda4af }
+    .cards { display:grid; grid-template-columns:repeat(4,minmax(160px,1fr)); gap:14px; margin:22px 0 }
+    .card { padding:18px; background:#0e1d31e8; border:1px solid #29415f; border-radius:14px }
+    .label { color:#96a9c1; font-size:12px; text-transform:uppercase; letter-spacing:.06em }
+    .value { display:block; margin-top:7px; font-size:25px; font-weight:800 }
+    .online { color:#4ade80 } .offline { color:#fb7185 }
+    .toolbar { display:flex; justify-content:space-between; align-items:end; gap:12px; margin-bottom:12px }
+    .table-wrap { overflow:auto; border:1px solid #29415f; border-radius:14px; background:#0e1d31e8 }
+    table { width:100%; min-width:1050px; border-collapse:collapse }
+    th,td { padding:12px 13px; text-align:left; border-bottom:1px solid #21344c; white-space:nowrap }
+    th { color:#aebed1; background:#132740; font-size:12px; text-transform:uppercase }
+    .pill { padding:5px 9px; border-radius:999px; font-size:12px; font-weight:800; color:#86efac; background:#22c55e22; border:1px solid #22c55e66 }
+    .empty { text-align:center; color:#96a9c1; padding:30px }
+    @media(max-width:800px){ header { align-items:flex-start; flex-direction:column } .cards{grid-template-columns:repeat(2,1fr)} }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>Monitor UPS IoT</h1><p class="muted">Telemetría disponible desde cualquier dispositivo</p></div>
+    <button id="logout" class="secondary hidden">Cerrar sesión</button>
+  </header>
+
+  <main>
+    <section id="login" class="login">
+      <h2>Iniciar sesión</h2>
+      <p class="muted">Utiliza el usuario creado en Supabase.</p>
+      <form id="login-form">
+        <label for="email">Correo electrónico</label><input id="email" type="email" required autocomplete="username">
+        <label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password">
+        <button id="login-button" type="submit">Entrar</button>
+      </form>
+      <div id="login-message" class="message"></div>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="cards">
+        <article class="card"><span class="label">Plataforma</span><span class="value online">En línea</span></article>
+        <article class="card"><span class="label">Registros</span><span id="count" class="value">0</span></article>
+        <article class="card"><span class="label">Último dispositivo</span><span id="last-device" class="value">—</span></article>
+        <article class="card"><span class="label">Actualización</span><span id="update-state" class="value">—</span></article>
+      </div>
+      <div class="toolbar"><div><h2>Historial de telemetría</h2><span id="last-update" class="muted">Cargando…</span></div><button id="refresh" class="secondary">Actualizar</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Fecha y hora</th><th>Dispositivo</th><th>Secuencia</th><th>Estado</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th></tr></thead><tbody id="rows"><tr><td colspan="8" class="empty">Cargando registros…</td></tr></tbody></table></div>
+    </section>
+  </main>
+
+  <script>
+    const config = { url: {{ supabase_url|tojson }}, key: {{ supabase_publishable_key|tojson }}, error: {{ configuration_error|tojson }} };
+    const client = config.url && config.key ? supabase.createClient(config.url, config.key) : null;
+    const login = document.querySelector('#login'), dashboard = document.querySelector('#dashboard'), logout = document.querySelector('#logout');
+    const rows = document.querySelector('#rows'), message = document.querySelector('#login-message');
+    const esc = value => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    function showSession(active){ login.classList.toggle('hidden',active); dashboard.classList.toggle('hidden',!active); logout.classList.toggle('hidden',!active); }
+    function render(records){
+      document.querySelector('#count').textContent=records.length;
+      document.querySelector('#last-device').textContent=records[0]?.device_id ?? '—';
+      rows.innerHTML=records.length ? records.map(r=>`<tr><td>${esc(new Date(r.received_at).toLocaleString('es-MX'))}</td><td>${esc(r.device_id)}</td><td>${esc(r.sequence)}</td><td><span class="pill">${esc(r.status)}</span></td><td>${esc(r.input_voltage)} V</td><td>${esc(r.output_voltage)} V</td><td>${esc(r.battery_voltage)} V</td><td>${esc(r.load_percent)} %</td></tr>`).join('') : '<tr><td colspan="8" class="empty">Todavía no hay telemetría.</td></tr>';
+    }
+    async function loadRecords(){
+      document.querySelector('#update-state').textContent='Cargando';
+      const {data,error}=await client.from('telemetry').select('*').order('received_at',{ascending:false}).limit(200);
+      if(error){ document.querySelector('#last-update').textContent='Error: '+error.message; document.querySelector('#update-state').textContent='Error'; return; }
+      render(data); document.querySelector('#last-update').textContent='Actualizado: '+new Date().toLocaleTimeString('es-MX'); document.querySelector('#update-state').textContent='En vivo';
+    }
+    document.querySelector('#login-form').addEventListener('submit',async e=>{
+      e.preventDefault(); message.textContent='Ingresando…';
+      const {error}=await client.auth.signInWithPassword({email:document.querySelector('#email').value,password:document.querySelector('#password').value});
+      message.textContent=error ? 'No se pudo iniciar sesión: '+error.message : '';
+    });
+    logout.addEventListener('click',()=>client.auth.signOut()); document.querySelector('#refresh').addEventListener('click',loadRecords);
+    if(!client){ message.textContent='Configuración incompleta en Render: '+config.error; }
+    else {
+      client.auth.onAuthStateChange((_event,session)=>{ showSession(Boolean(session)); if(session) setTimeout(loadRecords,0); });
+      client.channel('telemetry-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'telemetry'},()=>loadRecords()).subscribe();
+      setInterval(()=>{ if(!dashboard.classList.contains('hidden')) loadRecords(); },5000);
+    }
+  </script>
+</body>
+</html>
