@@ -37,6 +37,12 @@ def parse_decimal(value: object, field: str, minimum: str, maximum: str) -> floa
     return float(number)
 
 
+def parse_optional_decimal(value: object, field: str, minimum: str, maximum: str) -> float | None:
+    if value is None or str(value).strip() == "":
+        return None
+    return parse_decimal(value, field, minimum, maximum)
+
+
 def parse_telemetry(payload: dict) -> dict:
     device_id = str(payload.get("device_id", "")).strip()
     status = str(payload.get("status", "ONLINE")).strip().upper()
@@ -53,7 +59,7 @@ def parse_telemetry(payload: dict) -> dict:
     if sequence < 0:
         raise ValueError("sequence no puede ser negativo")
 
-    return {
+    record = {
         "received_at": datetime.now(timezone.utc).isoformat(),
         "device_id": device_id,
         "sequence": sequence,
@@ -65,6 +71,16 @@ def parse_telemetry(payload: dict) -> dict:
         "source_ip": request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip(),
         "raw_payload": str(payload.get("raw_payload", ""))[:1000] or None,
     }
+
+    # La temperatura es opcional para conservar compatibilidad con los equipos
+    # actuales. Solo se envía a Supabase cuando el dispositivo la incluye.
+    if "temperature_c" in payload or "temperature" in payload:
+        temperature = payload.get("temperature_c", payload.get("temperature"))
+        record["temperature_c"] = parse_optional_decimal(
+            temperature, "temperature_c", "-50", "150"
+        )
+
+    return record
 
 
 @app.get("/")
