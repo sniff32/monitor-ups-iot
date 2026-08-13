@@ -287,6 +287,7 @@
     .brand-blue .card-note, .brand-orange .card-note { color: rgba(255, 255, 255, .78); }
 
     .section-card { border: 1px solid #d7e6ee; border-radius: 15px; background: #fff; box-shadow: 0 9px 26px rgba(40, 102, 132, .07); }
+    .section-card + .section-card, .section-stack { margin-top: 20px; }
     .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 20px; border-bottom: 1px solid #e2edf2; }
     .toolbar h3 { margin: 0 0 4px; color: var(--brand-blue-deep); font-size: 19px; }
     .muted { color: var(--muted); font-size: 13px; }
@@ -295,9 +296,31 @@
     th, td { padding: 13px 15px; border-bottom: 1px solid #e4edf2; color: #32556a; text-align: left; white-space: nowrap; }
     th { color: #547386; background: #f2f8fb; font-size: 11px; font-weight: 850; letter-spacing: .035em; text-transform: uppercase; }
     tbody tr:hover { background: #f8fcfe; }
+    .device-row { cursor: pointer; }
+    .device-row:focus-within { outline: 3px solid rgba(12, 145, 199, .16); outline-offset: -3px; }
+    .device-name-button { padding: 0; border: 0; color: var(--brand-blue-deep); background: transparent; font-weight: 850; text-align: left; }
+    .device-name-button:hover { color: var(--brand-blue); text-decoration: underline; }
+    .row-action { min-height: 34px; padding: 7px 11px; font-size: 12px; }
     .pill { display: inline-block; padding: 5px 9px; border: 1px solid #8ed9bd; border-radius: 999px; color: #167b56; background: #effbf6; font-size: 11px; font-weight: 850; }
     .pill.offline { border-color: #f2b5aa; color: #b43a26; background: #fff3f0; }
+    .pill.warning { border-color: #f4c47d; color: #9a5b03; background: #fff8e9; }
+    .pill.neutral { border-color: #bfd3dd; color: #527082; background: #f4f8fa; }
+    .pill.info { border-color: #9fd4e9; color: #08688f; background: #eef9fd; }
     .empty { padding: 34px; color: var(--muted); text-align: center; }
+
+    .detail-summary { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+    .status-value { font-size: clamp(20px, 2vw, 27px); }
+    .detail-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
+    .incident-list { display: grid; gap: 10px; padding: 16px 18px 18px; }
+    .incident-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 11px; padding: 12px; border: 1px solid #e1ebf0; border-radius: 11px; background: #fbfdfe; }
+    .incident-icon { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #9a5b03; background: #fff2d8; font-weight: 900; }
+    .incident-icon.critical { color: #b43a26; background: #fff0ed; }
+    .incident-copy strong { display: block; margin-bottom: 3px; color: var(--brand-blue-deep); font-size: 13px; }
+    .incident-copy span, .incident-time { color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .incident-time { text-align: right; }
+    .threshold-note { padding: 13px 18px 17px; border-top: 1px solid #e4edf2; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .section-card table.compact { min-width: 850px; }
+    .section-card table.history { min-width: 1100px; }
 
     .filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 13px; padding: 17px 18px; border: 1px solid #d7e6ee; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px rgba(40, 102, 132, .06); }
     .select-field { min-width: 210px; }
@@ -345,6 +368,8 @@
       .sidebar-label, .sidebar-note { display: none; }
       .nav-button { width: auto; min-width: max-content; margin: 0; }
       .cards { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+      .detail-summary { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+      .detail-columns { grid-template-columns: 1fr; }
       .charts-grid { grid-template-columns: 1fr; }
       .chart-card:first-child { grid-column: auto; }
     }
@@ -374,6 +399,7 @@
       .filter-bar { align-items: stretch; flex-direction: column; }
       .select-field { width: 100%; min-width: 0; }
       .filter-meta { margin-left: 0; padding: 0; }
+      .detail-summary { grid-template-columns: 1fr 1fr; }
       .chart-card { padding: 16px 13px; }
       .chart-header { align-items: flex-start; }
       .chart-current { font-size: 21px; }
@@ -381,6 +407,7 @@
 
     @media (max-width: 420px) {
       .cards { grid-template-columns: 1fr; }
+      .detail-summary { grid-template-columns: 1fr; }
       .card { min-height: 100px; }
       .nav-button span { display: none; }
       .nav-button { justify-content: center; min-width: 46px; }
@@ -489,28 +516,28 @@
             <div class="page-heading">
               <div>
                 <span class="page-kicker">Monitoreo centralizado</span>
-                <h2>Descripción general</h2>
-                <p>Estado actual e historial reciente de todos los dispositivos.</p>
+                <h2>Equipos monitoreados</h2>
+                <p>Una sola fila por dispositivo con su estado y valores más recientes.</p>
               </div>
               <button id="refresh" class="app-button" type="button">Actualizar datos</button>
             </div>
 
             <div class="cards">
-              <article class="card brand-blue"><span class="label">Plataforma</span><span class="value">En línea</span><span class="card-note">Servicio disponible</span></article>
-              <article class="card brand-orange"><span class="label">Dispositivos</span><span id="device-count" class="value">0</span><span class="card-note">Equipos registrados</span></article>
-              <article class="card"><span class="label">Registros cargados</span><span id="count" class="value">0</span><span class="card-note">Últimas mediciones</span></article>
-              <article class="card"><span class="label">Último dispositivo</span><span id="last-device" class="value">—</span><span id="update-state" class="card-note">Cargando…</span></article>
+              <article class="card brand-blue"><span class="label">Dispositivos</span><span id="device-count" class="value">0</span><span class="card-note">Equipos registrados</span></article>
+              <article class="card"><span class="label">Conectados</span><span id="online-count" class="value">0</span><span class="card-note">Comunicación reciente</span></article>
+              <article class="card brand-orange"><span class="label">Desconectados</span><span id="offline-count" class="value">0</span><span class="card-note">Más de 30 s sin datos</span></article>
+              <article class="card"><span class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Cargando…</span></article>
             </div>
 
             <section class="section-card">
               <div class="toolbar">
-                <div><h3>Historial de telemetría</h3><span id="last-update" class="muted">Cargando…</span></div>
-                <button id="open-latest-device" class="app-button secondary" type="button">Ver estadísticas</button>
+                <div><h3>Lista de equipos</h3><span id="last-update" class="muted">Cargando…</span></div>
+                <span class="muted">Selecciona un dispositivo para abrir su ficha completa</span>
               </div>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Fecha y hora</th><th>Dispositivo</th><th>Estado</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
-                  <tbody id="rows"><tr><td colspan="9" class="empty">Cargando registros…</td></tr></tbody>
+                  <thead><tr><th>Dispositivo</th><th>Conexión</th><th>Estado UPS</th><th>Última comunicación</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Alertas</th><th></th></tr></thead>
+                  <tbody id="device-rows"><tr><td colspan="11" class="empty">Cargando equipos…</td></tr></tbody>
                 </table>
               </div>
             </section>
@@ -535,23 +562,39 @@
                 <label for="range-select">Periodo mostrado</label>
                 <select id="range-select" aria-label="Cantidad de mediciones">
                   <option value="20">Últimas 20 mediciones</option>
-                  <option value="50" selected>Últimas 50 mediciones</option>
-                  <option value="100">Últimas 100 mediciones</option>
+                  <option value="50">Últimas 50 mediciones</option>
+                  <option value="100" selected>Últimas 100 mediciones</option>
                   <option value="200">Últimas 200 mediciones</option>
+                  <option value="500">Últimas 500 mediciones</option>
                 </select>
               </div>
               <span id="device-range-meta" class="filter-meta">Selecciona un equipo</span>
             </div>
 
             <div id="device-detail-content">
-              <div class="cards detail-cards">
-                <article class="card brand-blue"><span class="label">Dispositivo</span><span id="detail-device" class="value">—</span><span class="card-note">Equipo seleccionado</span></article>
-                <article class="card"><span class="label">Estado actual</span><span id="detail-status" class="value">—</span><span id="detail-time" class="card-note">Sin mediciones</span></article>
-                <article class="card brand-orange"><span class="label">Voltaje de entrada</span><span id="detail-input" class="value">—</span><span class="card-note">Última lectura</span></article>
-                <article class="card"><span class="label">Carga actual</span><span id="detail-load" class="value">—</span><span class="card-note">Porcentaje del UPS</span></article>
+              <div class="cards detail-cards detail-summary">
+                <article class="card brand-blue"><span class="label">Dispositivo</span><span id="detail-device" class="value status-value">—</span><span class="card-note">Equipo seleccionado</span></article>
+                <article class="card"><span class="label">Conexión</span><span id="detail-connection" class="value status-value">—</span><span id="detail-downtime" class="card-note">Sin mediciones</span></article>
+                <article class="card brand-orange"><span class="label">Estado UPS</span><span id="detail-ups-status" class="value status-value">—</span><span class="card-note">Último estado reportado</span></article>
+                <article class="card"><span class="label">Última comunicación</span><span id="detail-last-seen" class="value status-value">—</span><span id="detail-last-age" class="card-note">Sin mediciones</span></article>
+                <article class="card"><span class="label">Desconexiones</span><span id="detail-disconnections" class="value">0</span><span id="detail-total-downtime" class="card-note">0 s en el periodo</span></article>
+                <article class="card"><span class="label">Alertas activas</span><span id="detail-alerts" class="value">0</span><span id="detail-alerts-note" class="card-note">Sin alertas</span></article>
               </div>
 
-              <div class="charts-grid">
+              <div class="detail-columns">
+                <section class="section-card">
+                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Cambios importantes dentro del periodo cargado</span></div></div>
+                  <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
+                  <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
+                </section>
+                <section class="section-card">
+                  <div class="toolbar"><div><h3>Desconexiones detectadas</h3><span class="muted">Intervalos sin telemetría dentro del periodo</span></div></div>
+                  <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
+                  <div class="threshold-note">Una desconexión comienza cuando transcurren más de 30 segundos sin recibir una nueva medición.</div>
+                </section>
+              </div>
+
+              <div class="charts-grid section-stack">
                 <article class="chart-card" style="--chart-color:#ed6d05">
                   <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Temperatura</h3><span>Grados Celsius</span></div></div><strong id="current-temperature" class="chart-current">—</strong></div>
                   <div id="chart-temperature" class="chart" role="img" aria-label="Gráfica de temperatura"></div>
@@ -573,6 +616,18 @@
                   <div id="chart-load" class="chart" role="img" aria-label="Gráfica de porcentaje de carga"></div>
                 </article>
               </div>
+
+              <section class="section-card section-stack">
+                <div class="toolbar">
+                  <div><h3>Historial de telemetría del equipo</h3><span class="muted">Las mediciones anteriores se conservan únicamente dentro de esta ficha</span></div>
+                </div>
+                <div class="table-wrap">
+                  <table class="history">
+                    <thead><tr><th>Fecha y hora</th><th>Estado UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
+                    <tbody id="history-rows"><tr><td colspan="8" class="empty">Selecciona un equipo.</td></tr></tbody>
+                  </table>
+                </div>
+              </section>
             </div>
             <div id="device-detail-empty" class="detail-empty hidden"><h3>No hay datos para mostrar</h3><p>Cuando un dispositivo envíe telemetría aparecerán aquí sus gráficas.</p></div>
           </section>
@@ -587,7 +642,8 @@
     const login = document.querySelector('#login');
     const dashboard = document.querySelector('#dashboard');
     const logout = document.querySelector('#logout');
-    const rows = document.querySelector('#rows');
+    const deviceRows = document.querySelector('#device-rows');
+    const historyRows = document.querySelector('#history-rows');
     const deviceSelect = document.querySelector('#device-select');
     const rangeSelect = document.querySelector('#range-select');
     const message = document.querySelector('#login-message');
@@ -596,6 +652,18 @@
     const passwordToggle = document.querySelector('#toggle-password');
     const esc = value => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     let allRecords = [];
+    let loadingRecords = false;
+
+    const rules = {
+      offlineAfterMs: 30_000,
+      inputMin: 100,
+      inputMax: 140,
+      outputMin: 100,
+      outputMax: 140,
+      batteryMin: 10.5,
+      loadMax: 90,
+      temperatureMax: 50
+    };
 
     const metrics = [
       { container: 'chart-temperature', current: 'current-temperature', keys: ['temperature_c', 'temperature'], unit: '°C', label: 'Temperatura' },
@@ -621,6 +689,102 @@
 
     const formatMetric = (value, unit) => value === null ? '—' : `${Number(value.toFixed(2))} ${unit}`;
     const formatTime = value => new Date(value).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    const formatDuration = milliseconds => {
+      const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+      if (seconds < 60) return `${seconds} s`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} min ${seconds % 60} s`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} h ${minutes % 60} min`;
+      const days = Math.floor(hours / 24);
+      return `${days} d ${hours % 24} h`;
+    };
+
+    const validTime = record => {
+      const time = new Date(record?.received_at).getTime();
+      return Number.isFinite(time) ? time : 0;
+    };
+
+    function connectionState(record, now = Date.now()) {
+      const lastSeen = validTime(record);
+      const ageMs = lastSeen ? Math.max(0, now - lastSeen) : Number.POSITIVE_INFINITY;
+      return { connected: ageMs <= rules.offlineAfterMs, lastSeen, ageMs };
+    }
+
+    function measurementAlerts(record) {
+      if (!record) return [];
+      const alerts = [];
+      const push = (key, severity, title, message) => alerts.push({ key, severity, title, message, time: validTime(record) });
+      const status = String(record.status ?? 'UNKNOWN').toUpperCase();
+      const temperature = metricValue(record, metrics[0]);
+      const input = numberValue(record.input_voltage);
+      const output = numberValue(record.output_voltage);
+      const battery = numberValue(record.battery_voltage);
+      const load = numberValue(record.load_percent);
+
+      if (status !== 'ONLINE') push('ups-status', 'warning', `Estado UPS: ${status}`, 'El equipo reportó un estado diferente de ONLINE.');
+      if (input !== null && (input < rules.inputMin || input > rules.inputMax)) push('input-voltage', 'critical', 'Voltaje de entrada fuera de rango', `Lectura: ${formatMetric(input, 'V')}.`);
+      if (output !== null && (output < rules.outputMin || output > rules.outputMax)) push('output-voltage', 'critical', 'Voltaje de salida fuera de rango', `Lectura: ${formatMetric(output, 'V')}.`);
+      if (battery !== null && battery < rules.batteryMin) push('battery-voltage', 'critical', 'Batería baja', `Lectura: ${formatMetric(battery, 'V')}.`);
+      if (load !== null && load >= rules.loadMax) push('high-load', 'warning', 'Carga elevada', `Lectura: ${formatMetric(load, '%')}.`);
+      if (temperature !== null && temperature >= rules.temperatureMax) push('temperature', 'warning', 'Temperatura elevada', `Lectura: ${formatMetric(temperature, '°C')}.`);
+      return alerts;
+    }
+
+    function currentAlerts(record, now = Date.now()) {
+      const alerts = measurementAlerts(record);
+      const connection = connectionState(record, now);
+      if (!connection.connected) {
+        alerts.unshift({
+          key: 'connection',
+          severity: 'critical',
+          title: 'Dispositivo desconectado',
+          message: `${formatDuration(connection.ageMs)} sin recibir telemetría.`,
+          time: connection.lastSeen + rules.offlineAfterMs
+        });
+      }
+      return alerts;
+    }
+
+    function detectDisconnections(recordsAscending, now = Date.now()) {
+      const incidents = [];
+      for (let index = 1; index < recordsAscending.length; index += 1) {
+        const previousTime = validTime(recordsAscending[index - 1]);
+        const currentTime = validTime(recordsAscending[index]);
+        const gap = currentTime - previousTime;
+        if (previousTime && currentTime && gap > rules.offlineAfterMs) {
+          const startedAt = previousTime + rules.offlineAfterMs;
+          incidents.push({ startedAt, endedAt: currentTime, durationMs: currentTime - startedAt, active: false });
+        }
+      }
+      const latestTime = validTime(recordsAscending[recordsAscending.length - 1]);
+      if (latestTime && now - latestTime > rules.offlineAfterMs) {
+        const startedAt = latestTime + rules.offlineAfterMs;
+        incidents.push({ startedAt, endedAt: null, durationMs: now - startedAt, active: true });
+      }
+      return incidents.sort((a, b) => b.startedAt - a.startedAt);
+    }
+
+    function buildAlertHistory(recordsAscending, disconnections) {
+      const events = [];
+      let previousKeys = new Set();
+      recordsAscending.forEach(record => {
+        const alerts = measurementAlerts(record);
+        const currentKeys = new Set(alerts.map(alert => alert.key));
+        alerts.forEach(alert => {
+          if (!previousKeys.has(alert.key)) events.push(alert);
+        });
+        previousKeys = currentKeys;
+      });
+      disconnections.forEach(incident => events.push({
+        key: 'connection',
+        severity: 'critical',
+        title: incident.active ? 'Desconexión activa' : 'Desconexión detectada',
+        message: incident.active ? `${formatDuration(incident.durationMs)} desconectado.` : `Duración: ${formatDuration(incident.durationMs)}.`,
+        time: incident.startedAt
+      }));
+      return events.sort((a, b) => b.time - a.time).slice(0, 20);
+    }
 
     function showSession(active) {
       login.classList.toggle('hidden', active);
@@ -635,26 +799,65 @@
       if (panelId === 'device-panel') renderDeviceDetail();
     }
 
-    function render(records) {
-      allRecords = records;
-      const devices = [...new Set(records.map(record => record.device_id).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-      document.querySelector('#count').textContent = records.length;
-      document.querySelector('#device-count').textContent = devices.length;
-      document.querySelector('#last-device').textContent = records[0]?.device_id ?? '—';
-      rows.innerHTML = records.length
-        ? records.map(r => {
-            const temperature = metricValue(r, metrics[0]);
-            const statusClass = String(r.status).toUpperCase() === 'ONLINE' ? '' : ' offline';
-            return `<tr><td>${esc(new Date(r.received_at).toLocaleString('es-MX'))}</td><td><strong>${esc(r.device_id)}</strong></td><td><span class="pill${statusClass}">${esc(r.status)}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(r.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(r.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(r.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(r.load_percent), '%'))}</td><td>${esc(r.sequence)}</td></tr>`;
-          }).join('')
-        : '<tr><td colspan="9" class="empty">Todavía no hay telemetría.</td></tr>';
+    function latestDevices(records) {
+      const devices = new Map();
+      records.forEach(record => {
+        if (record.device_id && !devices.has(record.device_id)) devices.set(record.device_id, record);
+      });
+      return [...devices.values()].sort((a, b) => String(a.device_id).localeCompare(String(b.device_id)));
+    }
 
+    function openDevice(deviceId) {
+      if (!deviceId) return;
+      deviceSelect.value = deviceId;
+      showPanel('device-panel');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderOverview() {
+      const devices = latestDevices(allRecords);
+      const now = Date.now();
+      const summaries = devices.map(latest => {
+        const connection = connectionState(latest, now);
+        const alerts = currentAlerts(latest, now);
+        return { latest, connection, alerts };
+      });
+      const connected = summaries.filter(item => item.connection.connected).length;
+      const activeAlertCount = summaries.reduce((total, item) => total + item.alerts.length, 0);
+
+      document.querySelector('#device-count').textContent = devices.length;
+      document.querySelector('#online-count').textContent = connected;
+      document.querySelector('#offline-count').textContent = devices.length - connected;
+      document.querySelector('#active-alert-count').textContent = activeAlertCount;
+
+      deviceRows.innerHTML = summaries.length ? summaries.map(({ latest, connection, alerts }) => {
+        const temperature = metricValue(latest, metrics[0]);
+        const upsStatus = String(latest.status ?? '—').toUpperCase();
+        const upsClass = upsStatus === 'ONLINE' ? ' info' : ' warning';
+        const connectionClass = connection.connected ? '' : ' offline';
+        const connectionLabel = connection.connected ? 'Conectado' : 'Desconectado';
+        const alertClass = alerts.length ? ' warning' : ' neutral';
+        return `<tr class="device-row">
+          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(latest.device_id)}</button></td>
+          <td><span class="pill${connectionClass}">${connectionLabel}</span></td>
+          <td><span class="pill${upsClass}">${esc(upsStatus)}</span></td>
+          <td>${esc(formatTime(latest.received_at))}<br><span class="muted">Hace ${esc(formatDuration(connection.ageMs))}</span></td>
+          <td>${esc(formatMetric(temperature, '°C'))}</td>
+          <td>${esc(formatMetric(numberValue(latest.input_voltage), 'V'))}</td>
+          <td>${esc(formatMetric(numberValue(latest.output_voltage), 'V'))}</td>
+          <td>${esc(formatMetric(numberValue(latest.battery_voltage), 'V'))}</td>
+          <td>${esc(formatMetric(numberValue(latest.load_percent), '%'))}</td>
+          <td><span class="pill${alertClass}">${alerts.length}</span></td>
+          <td><button class="app-button secondary row-action" type="button" data-open-device="${esc(latest.device_id)}">Abrir equipo</button></td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="11" class="empty">Todavía no hay equipos con telemetría.</td></tr>';
+
+      const deviceIds = devices.map(record => record.device_id);
       const previousSelection = deviceSelect.value;
-      deviceSelect.innerHTML = devices.length
-        ? devices.map(device => `<option value="${esc(device)}">${esc(device)}</option>`).join('')
+      deviceSelect.innerHTML = deviceIds.length
+        ? deviceIds.map(device => `<option value="${esc(device)}">${esc(device)}</option>`).join('')
         : '<option value="">Sin dispositivos</option>';
-      deviceSelect.value = devices.includes(previousSelection) ? previousSelection : (records[0]?.device_id ?? '');
-      renderDeviceDetail();
+      deviceSelect.value = deviceIds.includes(previousSelection) ? previousSelection : (deviceIds[0] ?? '');
     }
 
     function renderLineChart(metric, records) {
@@ -721,7 +924,7 @@
 
     function renderDeviceDetail() {
       const deviceId = deviceSelect.value;
-      const limit = Number(rangeSelect.value) || 50;
+      const limit = Number(rangeSelect.value) || 100;
       const deviceRecordsDescending = allRecords.filter(record => record.device_id === deviceId);
       const deviceRecords = deviceRecordsDescending.slice(0, limit).reverse();
       const latest = deviceRecords[deviceRecords.length - 1];
@@ -730,29 +933,87 @@
       document.querySelector('#device-detail-content').classList.toggle('hidden', !hasData);
       document.querySelector('#device-detail-empty').classList.toggle('hidden', hasData);
       document.querySelector('#device-range-meta').textContent = hasData
-        ? `${deviceRecords.length} de ${deviceRecordsDescending.length} mediciones disponibles`
+        ? `${deviceRecords.length} de ${deviceRecordsDescending.length} mediciones cargadas`
         : 'Selecciona un equipo con telemetría';
-      if (!hasData) return;
+      if (!hasData) {
+        historyRows.innerHTML = '<tr><td colspan="8" class="empty">No hay mediciones para mostrar.</td></tr>';
+        return;
+      }
+
+      const now = Date.now();
+      const connection = connectionState(latest, now);
+      const disconnections = detectDisconnections(deviceRecords, now);
+      const activeDisconnection = disconnections.find(incident => incident.active);
+      const alerts = currentAlerts(latest, now);
+      const alertHistory = buildAlertHistory(deviceRecords, disconnections);
+      const totalDowntime = disconnections.reduce((total, incident) => total + incident.durationMs, 0);
 
       document.querySelector('#detail-device').textContent = deviceId;
-      document.querySelector('#detail-status').textContent = latest.status ?? '—';
-      document.querySelector('#detail-time').textContent = `Última lectura: ${formatTime(latest.received_at)}`;
-      document.querySelector('#detail-input').textContent = formatMetric(numberValue(latest.input_voltage), 'V');
-      document.querySelector('#detail-load').textContent = formatMetric(numberValue(latest.load_percent), '%');
+      document.querySelector('#detail-connection').textContent = connection.connected ? 'Conectado' : 'Desconectado';
+      document.querySelector('#detail-downtime').textContent = activeDisconnection ? `${formatDuration(activeDisconnection.durationMs)} sin conexión` : 'Sin desconexión activa';
+      document.querySelector('#detail-ups-status').textContent = String(latest.status ?? '—').toUpperCase();
+      document.querySelector('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
+      document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · hace ${formatDuration(connection.ageMs)}`;
+      document.querySelector('#detail-disconnections').textContent = disconnections.length;
+      document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo`;
+      document.querySelector('#detail-alerts').textContent = alerts.length;
+      document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Requieren revisión' : 'Sin alertas activas';
+
+      document.querySelector('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `
+        <article class="incident-item">
+          <span class="incident-icon${alert.severity === 'critical' ? ' critical' : ''}">!</span>
+          <div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
+          <time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time>
+        </article>`).join('') : '<div class="empty">No se detectaron alertas en este periodo.</div>';
+
+      document.querySelector('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `
+        <article class="incident-item">
+          <span class="incident-icon critical">!</span>
+          <div class="incident-copy"><strong>${incident.active ? 'Desconexión activa' : 'Desconexión recuperada'}</strong><span>Duración: ${esc(formatDuration(incident.durationMs))}</span></div>
+          <time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time>
+        </article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
+
+      historyRows.innerHTML = deviceRecordsDescending.slice(0, limit).map(record => {
+        const temperature = metricValue(record, metrics[0]);
+        return `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${String(record.status).toUpperCase() === 'ONLINE' ? ' info' : ' warning'}">${esc(record.status)}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(record.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.load_percent), '%'))}</td><td>${esc(record.sequence)}</td></tr>`;
+      }).join('');
       metrics.forEach(metric => renderLineChart(metric, deviceRecords));
     }
 
-    async function loadRecords() {
+    function mergeLatestRecords(records) {
+      const merged = new Map();
+      [...records, ...allRecords].forEach(record => {
+        const key = record.id ?? `${record.device_id}|${record.sequence}`;
+        if (!merged.has(key)) merged.set(key, record);
+      });
+      return [...merged.values()].sort((a, b) => validTime(b) - validTime(a)).slice(0, 5000);
+    }
+
+    async function loadRecords(fullHistory = false) {
+      if (loadingRecords) return;
+      loadingRecords = true;
       document.querySelector('#update-state').textContent = 'Cargando';
-      const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).limit(1000);
-      if (error) {
+      try {
+        const collected = [];
+        const pages = fullHistory ? 5 : 1;
+        for (let page = 0; page < pages; page += 1) {
+          const start = page * 1000;
+          const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).range(start, start + 999);
+          if (error) throw error;
+          collected.push(...data);
+          if (data.length < 1000) break;
+        }
+        allRecords = fullHistory ? collected : mergeLatestRecords(collected);
+        renderOverview();
+        renderDeviceDetail();
+        document.querySelector('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones cargadas`;
+        document.querySelector('#update-state').textContent = 'Datos en vivo';
+      } catch (error) {
         document.querySelector('#last-update').textContent = 'Error: ' + error.message;
-        document.querySelector('#update-state').textContent = 'Error';
-        return;
+        document.querySelector('#update-state').textContent = 'Error de actualización';
+      } finally {
+        loadingRecords = false;
       }
-      render(data);
-      document.querySelector('#last-update').textContent = 'Actualizado: ' + new Date().toLocaleTimeString('es-MX');
-      document.querySelector('#update-state').textContent = 'Datos en vivo';
     }
 
     document.querySelector('#login-form').addEventListener('submit', async event => {
@@ -784,14 +1045,14 @@
       button.addEventListener('click', () => showPanel(button.dataset.panel));
     });
     document.querySelector('[data-show-overview]').addEventListener('click', () => showPanel('overview-panel'));
-    document.querySelector('#open-latest-device').addEventListener('click', () => {
-      if (allRecords[0]?.device_id) deviceSelect.value = allRecords[0].device_id;
-      showPanel('device-panel');
+    deviceRows.addEventListener('click', event => {
+      const trigger = event.target.closest('[data-open-device]');
+      if (trigger) openDevice(trigger.dataset.openDevice);
     });
     deviceSelect.addEventListener('change', renderDeviceDetail);
     rangeSelect.addEventListener('change', renderDeviceDetail);
     logout.addEventListener('click', () => client.auth.signOut());
-    document.querySelector('#refresh').addEventListener('click', loadRecords);
+    document.querySelector('#refresh').addEventListener('click', () => loadRecords(true));
 
     if (!client) {
       loginButton.disabled = true;
@@ -799,11 +1060,11 @@
     } else {
       client.auth.onAuthStateChange((_event, session) => {
         showSession(Boolean(session));
-        if (session) setTimeout(loadRecords, 0);
+        if (session) setTimeout(() => loadRecords(true), 0);
       });
-      client.channel('telemetry-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => loadRecords()).subscribe();
+      client.channel('telemetry-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => loadRecords(false)).subscribe();
       setInterval(() => {
-        if (!dashboard.classList.contains('hidden')) loadRecords();
+        if (!dashboard.classList.contains('hidden')) loadRecords(false);
       }, 5000);
     }
   </script>
