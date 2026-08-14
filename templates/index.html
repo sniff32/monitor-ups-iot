@@ -15,7 +15,7 @@
       --brand-blue-soft: #eaf7fd;
       --brand-orange: #ed6d05;
       --ink: #18374d;
-      --muted: #667f91;
+      --muted: #526f82;
       --line: #cfe3ee;
       --white: #fff;
       background: #f2f8fc;
@@ -234,14 +234,16 @@
     .app-title { display: flex; align-items: center; gap: 13px; }
     .app-title img { width: 51px; height: 51px; object-fit: contain; }
     .app-title h1 { margin-bottom: 2px; color: var(--brand-blue-deep); font-size: 24px; letter-spacing: -.025em; }
-    .app-title p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+    .app-title p { margin-bottom: 0; color: var(--muted); font-size: 14px; font-weight: 500; }
     .app-header-actions { display: flex; align-items: center; gap: 12px; }
-    .live-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid #b7e4d0; border-radius: 999px; color: #167b56; background: #effbf6; font-size: 12px; font-weight: 800; }
+    .live-badge { display: inline-flex; align-items: center; gap: 9px; padding: 10px 14px; border: 1px solid #9ed9bf; border-radius: 999px; color: #116b4b; background: #edfbf5; font-size: 14px; font-weight: 800; }
+    .live-badge.error { border-color: #efb1a6; color: #a73725; background: #fff2ef; }
+    .live-badge.error .live-dot { background: #d84b37; box-shadow: 0 0 0 4px rgba(216, 75, 55, .12); }
     .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #24b47e; box-shadow: 0 0 0 4px rgba(36, 180, 126, .12); }
 
     .dashboard-shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100vh - 76px); }
     .dashboard-sidebar { padding: 27px 17px; color: #fff; background: linear-gradient(180deg, #073c58 0%, #062e45 100%); }
-    .sidebar-label { display: block; margin: 3px 13px 12px; color: #81c9e8; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .sidebar-label { display: block; margin: 3px 13px 12px; color: #a7ddf2; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
     .nav-button {
       display: flex;
       align-items: center;
@@ -261,51 +263,57 @@
     .nav-button svg { width: 20px; height: 20px; flex: 0 0 auto; }
     .nav-button:hover { color: #fff; background: rgba(255, 255, 255, .08); }
     .nav-button.active { color: #fff; background: linear-gradient(135deg, var(--brand-blue), #087fb4); box-shadow: 0 10px 21px rgba(0, 0, 0, .18); }
-    .sidebar-note { margin: 31px 12px 0; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .12); color: #9ec8db; font-size: 12px; line-height: 1.55; }
+    .sidebar-note { margin: 31px 12px 0; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .16); color: #c1dfec; font-size: 14px; line-height: 1.6; }
     .sidebar-note strong { display: block; margin-bottom: 4px; color: #fff; }
 
     .dashboard-content { min-width: 0; padding: clamp(22px, 3vw, 40px); }
     .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
-    .page-kicker { display: block; margin-bottom: 6px; color: var(--brand-orange); font-size: 11px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    .page-kicker { display: block; margin-bottom: 6px; color: var(--brand-orange); font-size: 12px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
     .page-heading h2 { margin-bottom: 5px; color: var(--brand-blue-deep); font-size: clamp(26px, 3vw, 36px); letter-spacing: -.035em; }
-    .page-heading p { margin-bottom: 0; color: var(--muted); }
+    .page-heading p { margin-bottom: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
     .app-button { min-height: 43px; padding: 10px 15px; border: 0; border-radius: 9px; color: #fff; background: linear-gradient(135deg, var(--brand-blue), #087fb4); box-shadow: 0 8px 18px rgba(12, 145, 199, .18); font-weight: 800; }
     .app-button.secondary { border: 1px solid #b9d6e4; color: var(--brand-blue-deep); background: #fff; box-shadow: none; }
     .app-button:hover { transform: translateY(-1px); }
 
     .cards { display: grid; grid-template-columns: repeat(4, minmax(160px, 1fr)); gap: 15px; margin: 0 0 27px; }
-    .card { position: relative; min-height: 130px; overflow: hidden; padding: 19px 20px; border: 1px solid #d7e6ee; border-radius: 15px; background: #fff; box-shadow: 0 9px 26px rgba(40, 102, 132, .08); }
+    .card { position: relative; min-height: 142px; overflow: hidden; padding: 21px 22px; border: 1px solid #d7e6ee; border-radius: 15px; background: #fff; box-shadow: 0 9px 26px rgba(40, 102, 132, .08); }
     .card::after { content: ""; position: absolute; right: -18px; bottom: -30px; width: 96px; height: 96px; border-radius: 50%; background: rgba(12, 145, 199, .06); }
     .card.brand-blue { color: #fff; border-color: transparent; background: linear-gradient(135deg, #10a4dc, #087fb4); }
     .card.brand-orange { color: #fff; border-color: transparent; background: linear-gradient(135deg, #f59618, var(--brand-orange)); }
     .card.brand-blue::after, .card.brand-orange::after { background: rgba(255, 255, 255, .13); }
-    .label { position: relative; z-index: 1; color: #70899a; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-    .brand-blue .label, .brand-orange .label { color: rgba(255, 255, 255, .78); }
+    .label { position: relative; z-index: 1; color: #516f82; font-size: 13px; font-weight: 850; letter-spacing: .065em; line-height: 1.35; text-transform: uppercase; }
+    .brand-blue .label, .brand-orange .label { color: rgba(255, 255, 255, .96); }
     .value { position: relative; z-index: 1; display: block; margin-top: 10px; color: var(--brand-blue-deep); font-size: clamp(23px, 2.25vw, 31px); font-weight: 850; letter-spacing: -.035em; }
     .brand-blue .value, .brand-orange .value { color: #fff; }
-    .card-note { position: relative; z-index: 1; display: block; margin-top: 8px; color: #7890a0; font-size: 12px; }
-    .brand-blue .card-note, .brand-orange .card-note { color: rgba(255, 255, 255, .78); }
+    .card-note { position: relative; z-index: 1; display: block; margin-top: 8px; color: #526f82; font-size: 14px; font-weight: 500; line-height: 1.45; }
+    .brand-blue .card-note, .brand-orange .card-note { color: rgba(255, 255, 255, .96); }
 
     .section-card { border: 1px solid #d7e6ee; border-radius: 15px; background: #fff; box-shadow: 0 9px 26px rgba(40, 102, 132, .07); }
     .section-card + .section-card, .section-stack { margin-top: 20px; }
     .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 20px; border-bottom: 1px solid #e2edf2; }
-    .toolbar h3 { margin: 0 0 4px; color: var(--brand-blue-deep); font-size: 19px; }
-    .muted { color: var(--muted); font-size: 13px; }
+    .toolbar h3 { margin: 0 0 5px; color: var(--brand-blue-deep); font-size: 21px; }
+    .muted { color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .table-guidance { margin: 0; padding: 12px 20px; border-bottom: 1px solid #ead9b7; color: #6f5529; background: #fffaf0; font-size: 14px; line-height: 1.5; }
+    .table-guidance strong { color: #6f4705; }
     .table-wrap { overflow: auto; }
     table { width: 100%; min-width: 1100px; border-collapse: collapse; }
-    th, td { padding: 13px 15px; border-bottom: 1px solid #e4edf2; color: #32556a; text-align: left; white-space: nowrap; }
-    th { color: #547386; background: #f2f8fb; font-size: 11px; font-weight: 850; letter-spacing: .035em; text-transform: uppercase; }
+    th, td { padding: 14px 15px; border-bottom: 1px solid #e4edf2; color: #294f66; font-size: 15px; text-align: left; white-space: nowrap; }
+    th { color: #45697e; background: #f2f8fb; font-size: 12px; font-weight: 850; letter-spacing: .03em; line-height: 1.35; text-transform: uppercase; }
     tbody tr:hover { background: #f8fcfe; }
     .device-row { cursor: pointer; }
+    .device-row.stale-row { background: #fffaf2; }
+    .device-row.stale-row:hover { background: #fff6e7; }
     .device-row:focus-within { outline: 3px solid rgba(12, 145, 199, .16); outline-offset: -3px; }
-    .device-name-button { padding: 0; border: 0; color: var(--brand-blue-deep); background: transparent; font-weight: 850; text-align: left; }
+    .device-name-button { padding: 0; border: 0; color: var(--brand-blue-deep); background: transparent; font-size: 16px; font-weight: 850; text-align: left; }
     .device-name-button:hover { color: var(--brand-blue); text-decoration: underline; }
     .row-action { min-height: 34px; padding: 7px 11px; font-size: 12px; }
-    .pill { display: inline-block; padding: 5px 9px; border: 1px solid #8ed9bd; border-radius: 999px; color: #167b56; background: #effbf6; font-size: 11px; font-weight: 850; }
+    .pill { display: inline-block; padding: 6px 10px; border: 1px solid #8ed9bd; border-radius: 999px; color: #116b4b; background: #effbf6; font-size: 12px; font-weight: 850; }
     .pill.offline { border-color: #f2b5aa; color: #b43a26; background: #fff3f0; }
     .pill.warning { border-color: #f4c47d; color: #9a5b03; background: #fff8e9; }
     .pill.neutral { border-color: #bfd3dd; color: #527082; background: #f4f8fa; }
     .pill.info { border-color: #9fd4e9; color: #08688f; background: #eef9fd; }
+    .stale-note { display: block; margin-top: 4px; color: #8a5a0a; font-size: 12px; font-weight: 750; line-height: 1.35; }
+    .last-reading { color: #5c6670; font-weight: 700; }
     .empty { padding: 34px; color: var(--muted); text-align: center; }
 
     .detail-summary { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
@@ -315,19 +323,19 @@
     .incident-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 11px; padding: 12px; border: 1px solid #e1ebf0; border-radius: 11px; background: #fbfdfe; }
     .incident-icon { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #9a5b03; background: #fff2d8; font-weight: 900; }
     .incident-icon.critical { color: #b43a26; background: #fff0ed; }
-    .incident-copy strong { display: block; margin-bottom: 3px; color: var(--brand-blue-deep); font-size: 13px; }
-    .incident-copy span, .incident-time { color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .incident-copy strong { display: block; margin-bottom: 4px; color: var(--brand-blue-deep); font-size: 15px; }
+    .incident-copy span, .incident-time { color: var(--muted); font-size: 13px; line-height: 1.5; }
     .incident-time { text-align: right; }
-    .threshold-note { padding: 13px 18px 17px; border-top: 1px solid #e4edf2; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .threshold-note { padding: 14px 18px 18px; border-top: 1px solid #e4edf2; color: var(--muted); font-size: 13px; line-height: 1.6; }
     .section-card table.compact { min-width: 850px; }
     .section-card table.history { min-width: 1100px; }
 
     .filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 13px; padding: 17px 18px; border: 1px solid #d7e6ee; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px rgba(40, 102, 132, .06); }
     .select-field { min-width: 210px; }
-    .select-field label { display: block; margin-bottom: 6px; color: #557587; font-size: 11px; font-weight: 850; text-transform: uppercase; }
+    .select-field label { display: block; margin-bottom: 6px; color: #45697e; font-size: 12px; font-weight: 850; text-transform: uppercase; }
     .select-field select { width: 100%; min-height: 43px; padding: 9px 36px 9px 12px; border: 1px solid #bed6e2; border-radius: 9px; outline: none; color: var(--ink); background: #fbfdfe; }
     .select-field select:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 4px rgba(12, 145, 199, .1); }
-    .filter-meta { margin-left: auto; padding-bottom: 10px; color: var(--muted); font-size: 12px; }
+    .filter-meta { margin-left: auto; padding-bottom: 10px; color: var(--muted); font-size: 14px; }
 
     .detail-cards { margin-top: 20px; }
     .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
@@ -337,14 +345,14 @@
     .chart-title { display: flex; align-items: center; gap: 10px; }
     .chart-accent { width: 4px; height: 35px; border-radius: 999px; background: var(--chart-color, var(--brand-blue)); }
     .chart-title h3 { margin: 0 0 3px; color: var(--brand-blue-deep); font-size: 17px; }
-    .chart-title span { color: var(--muted); font-size: 12px; }
+    .chart-title span { color: var(--muted); font-size: 14px; }
     .chart-current { color: var(--chart-color, var(--brand-blue)); font-size: 24px; font-weight: 850; letter-spacing: -.035em; }
     .chart { min-height: 245px; }
     .chart svg { display: block; width: 100%; height: auto; min-height: 230px; overflow: visible; }
     .chart-empty { display: grid; min-height: 235px; place-items: center; padding: 25px; border: 1px dashed #cbdfe9; border-radius: 12px; color: var(--muted); background: #f8fcfe; text-align: center; }
     .chart-empty strong { display: block; margin-bottom: 5px; color: var(--brand-blue-deep); }
     .chart-grid-line { stroke: #dfeaf0; stroke-width: 1; }
-    .chart-axis-text { fill: #78909e; font-size: 10px; font-family: "Segoe UI", Arial, sans-serif; }
+    .chart-axis-text { fill: #5c7484; font-size: 11px; font-family: "Segoe UI", Arial, sans-serif; }
     .chart-line { fill: none; stroke: var(--chart-color, var(--brand-blue)); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
     .chart-area { fill: var(--chart-color, var(--brand-blue)); opacity: .08; }
     .chart-point { fill: #fff; stroke: var(--chart-color, var(--brand-blue)); stroke-width: 2.4; }
@@ -425,7 +433,7 @@
       <div><h1>Monitor UPS IoT</h1><p>Telemetría disponible desde cualquier dispositivo</p></div>
     </div>
     <div class="app-header-actions">
-      <span class="live-badge"><span class="live-dot"></span>Datos en vivo</span>
+      <span id="server-status" class="live-badge"><span class="live-dot"></span><span id="server-status-text">Conectando con servidor</span></span>
       <button id="logout" class="app-button secondary hidden">Cerrar sesión</button>
     </div>
   </header>
@@ -508,7 +516,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/><path d="M2 21h20"/></svg>
             <span>Estadísticas del equipo</span>
           </button>
-          <p class="sidebar-note"><strong>Monitor UPS IoT</strong>Selecciona un equipo para analizar cada variable por separado.</p>
+          <p class="sidebar-note"><strong>Monitor UPS IoT</strong>Revisa primero si el dispositivo está comunicando. Después consulta el último estado y las mediciones informadas por el UPS.</p>
         </aside>
 
         <div class="dashboard-content">
@@ -517,26 +525,27 @@
               <div>
                 <span class="page-kicker">Monitoreo centralizado</span>
                 <h2>Equipos monitoreados</h2>
-                <p>Una sola fila por dispositivo con su estado y valores más recientes.</p>
+                <p>Consulta la comunicación de cada dispositivo, el último estado informado por el UPS y sus mediciones más recientes.</p>
               </div>
               <button id="refresh" class="app-button" type="button">Actualizar datos</button>
             </div>
 
             <div class="cards">
-              <article class="card brand-blue"><span class="label">Dispositivos</span><span id="device-count" class="value">0</span><span class="card-note">Equipos registrados</span></article>
-              <article class="card"><span class="label">Conectados</span><span id="online-count" class="value">0</span><span class="card-note">Comunicación reciente</span></article>
-              <article class="card brand-orange"><span class="label">Desconectados</span><span id="offline-count" class="value">0</span><span class="card-note">Más de 30 s sin datos</span></article>
-              <article class="card"><span class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Cargando…</span></article>
+              <article class="card brand-blue"><span class="label">Dispositivos</span><span id="device-count" class="value">0</span><span class="card-note">Equipos registrados en la plataforma</span></article>
+              <article class="card"><span class="label">Comunicando ahora</span><span id="online-count" class="value">0</span><span class="card-note">Enviaron datos en los últimos 30 segundos</span></article>
+              <article class="card brand-orange"><span class="label">Sin comunicación</span><span id="offline-count" class="value">0</span><span class="card-note">Más de 30 segundos sin reportar datos</span></article>
+              <article class="card"><span class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Calculando situaciones que requieren revisión…</span></article>
             </div>
 
             <section class="section-card">
               <div class="toolbar">
-                <div><h3>Lista de equipos</h3><span id="last-update" class="muted">Cargando…</span></div>
-                <span class="muted">Selecciona un dispositivo para abrir su ficha completa</span>
+                <div><h3>Estado general de los equipos</h3><span id="last-update" class="muted">Cargando información…</span></div>
+                <span class="muted">Selecciona un dispositivo para consultar su ficha completa</span>
               </div>
+              <p class="table-guidance"><strong>Importante:</strong> si un dispositivo aparece sin comunicación, los valores mostrados son su última lectura guardada; no representan necesariamente el estado actual del UPS.</p>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Dispositivo</th><th>Conexión</th><th>Estado UPS</th><th>Última comunicación</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Alertas</th><th></th></tr></thead>
+                  <thead><tr><th>Dispositivo</th><th>Comunicación del dispositivo</th><th>Último estado reportado del UPS</th><th>Último dato recibido</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Alertas</th><th></th></tr></thead>
                   <tbody id="device-rows"><tr><td colspan="11" class="empty">Cargando equipos…</td></tr></tbody>
                 </table>
               </div>
@@ -548,7 +557,7 @@
               <div>
                 <span class="page-kicker">Análisis individual</span>
                 <h2>Estadísticas del equipo</h2>
-                <p>Cada gráfica muestra una sola variable del dispositivo seleccionado.</p>
+                <p>Distingue la comunicación del dispositivo, el estado informado por el UPS y el historial de cada medición.</p>
               </div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
             </div>
@@ -574,23 +583,23 @@
             <div id="device-detail-content">
               <div class="cards detail-cards detail-summary">
                 <article class="card brand-blue"><span class="label">Dispositivo</span><span id="detail-device" class="value status-value">—</span><span class="card-note">Equipo seleccionado</span></article>
-                <article class="card"><span class="label">Conexión</span><span id="detail-connection" class="value status-value">—</span><span id="detail-downtime" class="card-note">Sin mediciones</span></article>
-                <article class="card brand-orange"><span class="label">Estado UPS</span><span id="detail-ups-status" class="value status-value">—</span><span class="card-note">Último estado reportado</span></article>
-                <article class="card"><span class="label">Última comunicación</span><span id="detail-last-seen" class="value status-value">—</span><span id="detail-last-age" class="card-note">Sin mediciones</span></article>
-                <article class="card"><span class="label">Desconexiones</span><span id="detail-disconnections" class="value">0</span><span id="detail-total-downtime" class="card-note">0 s en el periodo</span></article>
+                <article class="card"><span class="label">Comunicación del dispositivo</span><span id="detail-connection" class="value status-value">—</span><span id="detail-downtime" class="card-note">Sin mediciones</span></article>
+                <article class="card brand-orange"><span class="label">Último estado reportado del UPS</span><span id="detail-ups-status" class="value status-value">—</span><span id="detail-ups-note" class="card-note">Todavía no existe un reporte</span></article>
+                <article class="card"><span class="label">Último dato recibido</span><span id="detail-last-seen" class="value status-value">—</span><span id="detail-last-age" class="card-note">Sin mediciones</span></article>
+                <article class="card"><span class="label">Pérdidas de comunicación</span><span id="detail-disconnections" class="value">0</span><span id="detail-total-downtime" class="card-note">0 s en el periodo</span></article>
                 <article class="card"><span class="label">Alertas activas</span><span id="detail-alerts" class="value">0</span><span id="detail-alerts-note" class="card-note">Sin alertas</span></article>
               </div>
 
               <div class="detail-columns">
                 <section class="section-card">
-                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Cambios importantes dentro del periodo cargado</span></div></div>
+                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Eventos reportados por el UPS y problemas de comunicación detectados por la plataforma</span></div></div>
                   <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
                   <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
                 </section>
                 <section class="section-card">
-                  <div class="toolbar"><div><h3>Desconexiones detectadas</h3><span class="muted">Intervalos sin telemetría dentro del periodo</span></div></div>
+                  <div class="toolbar"><div><h3>Pérdidas de comunicación detectadas</h3><span class="muted">Periodos en los que la plataforma dejó de recibir datos del dispositivo</span></div></div>
                   <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
-                  <div class="threshold-note">Una desconexión comienza cuando transcurren más de 30 segundos sin recibir una nueva medición.</div>
+                  <div class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos. La interfaz USB o RS-485 se indicará cuando el dispositivo la incluya en su reporte; de lo contrario se mostrará como “interfaz no reportada”.</div>
                 </section>
               </div>
 
@@ -623,7 +632,7 @@
                 </div>
                 <div class="table-wrap">
                   <table class="history">
-                    <thead><tr><th>Fecha y hora</th><th>Estado UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
+                    <thead><tr><th>Fecha y hora</th><th>Estado reportado del UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
                     <tbody id="history-rows"><tr><td colspan="8" class="empty">Selecciona un equipo.</td></tr></tbody>
                   </table>
                 </div>
@@ -700,6 +709,47 @@
       return `${days} d ${hours % 24} h`;
     };
 
+    const normalizedUpsStatus = record => String(record?.status ?? 'SIN_DATO').trim().toUpperCase();
+
+    function readableUpsStatus(record) {
+      const status = normalizedUpsStatus(record);
+      const labels = {
+        ONLINE: 'Operación normal',
+        ON_BATTERY: 'Trabajando con batería',
+        BATTERY: 'Trabajando con batería',
+        LOW_BATTERY: 'Batería baja',
+        UPS_DISCONNECTED: 'UPS sin comunicación',
+        DISCONNECTED: 'UPS sin comunicación',
+        OFFLINE: 'UPS apagado o sin comunicación',
+        FAULT: 'Falla reportada',
+        SIN_DATO: 'Sin estado reportado'
+      };
+      return labels[status] ?? status.replaceAll('_', ' ').toLowerCase().replace(/^./, character => character.toUpperCase());
+    }
+
+    function reportedInterface(record) {
+      const raw = String(
+        record?.ups_interface ?? record?.interface_type ?? record?.data_interface ?? record?.source_interface ?? ''
+      ).trim().toUpperCase();
+      if (raw.includes('USB')) return 'USB';
+      if (raw.includes('485')) return 'RS-485';
+      return '';
+    }
+
+    const interfaceDescription = record => reportedInterface(record) || 'interfaz no reportada';
+
+    function overviewMetric(value, unit, connected) {
+      const formatted = esc(formatMetric(value, unit));
+      if (connected) return formatted;
+      return `<span class="last-reading">${formatted}</span><span class="stale-note">Último dato recibido</span>`;
+    }
+
+    function setServerState(connected, text) {
+      const badge = document.querySelector('#server-status');
+      document.querySelector('#server-status-text').textContent = text;
+      badge.classList.toggle('error', !connected);
+    }
+
     const validTime = record => {
       const time = new Date(record?.received_at).getTime();
       return Number.isFinite(time) ? time : 0;
@@ -722,7 +772,17 @@
       const battery = numberValue(record.battery_voltage);
       const load = numberValue(record.load_percent);
 
-      if (status !== 'ONLINE') push('ups-status', 'warning', `Estado UPS: ${status}`, 'El equipo reportó un estado diferente de ONLINE.');
+      const upsLabel = readableUpsStatus(record);
+      const upsInterface = interfaceDescription(record);
+      if (['UPS_DISCONNECTED', 'DISCONNECTED', 'OFFLINE'].includes(status)) {
+        push('ups-status', 'critical', 'UPS sin comunicación', `El dispositivo reportó pérdida de comunicación con el UPS mediante ${upsInterface}.`);
+      } else if (['ON_BATTERY', 'BATTERY'].includes(status)) {
+        push('ups-status', 'warning', 'UPS trabajando con batería', 'El UPS informó que la alimentación principal no está disponible y está utilizando su batería.');
+      } else if (status === 'LOW_BATTERY') {
+        push('ups-status', 'critical', 'Batería del UPS baja', 'El UPS informó que queda poca energía disponible en su batería.');
+      } else if (status !== 'ONLINE') {
+        push('ups-status', 'warning', `Estado reportado por el UPS: ${upsLabel}`, 'El UPS informó una condición que requiere revisión.');
+      }
       if (input !== null && (input < rules.inputMin || input > rules.inputMax)) push('input-voltage', 'critical', 'Voltaje de entrada fuera de rango', `Lectura: ${formatMetric(input, 'V')}.`);
       if (output !== null && (output < rules.outputMin || output > rules.outputMax)) push('output-voltage', 'critical', 'Voltaje de salida fuera de rango', `Lectura: ${formatMetric(output, 'V')}.`);
       if (battery !== null && battery < rules.batteryMin) push('battery-voltage', 'critical', 'Batería baja', `Lectura: ${formatMetric(battery, 'V')}.`);
@@ -732,14 +792,14 @@
     }
 
     function currentAlerts(record, now = Date.now()) {
-      const alerts = measurementAlerts(record);
       const connection = connectionState(record, now);
+      const alerts = connection.connected ? measurementAlerts(record) : [];
       if (!connection.connected) {
         alerts.unshift({
           key: 'connection',
           severity: 'critical',
-          title: 'Dispositivo desconectado',
-          message: `${formatDuration(connection.ageMs)} sin recibir telemetría.`,
+          title: 'Sin comunicación con el dispositivo',
+          message: `La plataforma lleva ${formatDuration(connection.ageMs)} sin recibir datos. Última interfaz del UPS: ${interfaceDescription(record)}.`,
           time: connection.lastSeen + rules.offlineAfterMs
         });
       }
@@ -754,13 +814,25 @@
         const gap = currentTime - previousTime;
         if (previousTime && currentTime && gap > rules.offlineAfterMs) {
           const startedAt = previousTime + rules.offlineAfterMs;
-          incidents.push({ startedAt, endedAt: currentTime, durationMs: currentTime - startedAt, active: false });
+          incidents.push({
+            startedAt,
+            endedAt: currentTime,
+            durationMs: currentTime - startedAt,
+            active: false,
+            upsInterface: interfaceDescription(recordsAscending[index - 1])
+          });
         }
       }
       const latestTime = validTime(recordsAscending[recordsAscending.length - 1]);
       if (latestTime && now - latestTime > rules.offlineAfterMs) {
         const startedAt = latestTime + rules.offlineAfterMs;
-        incidents.push({ startedAt, endedAt: null, durationMs: now - startedAt, active: true });
+        incidents.push({
+          startedAt,
+          endedAt: null,
+          durationMs: now - startedAt,
+          active: true,
+          upsInterface: interfaceDescription(recordsAscending[recordsAscending.length - 1])
+        });
       }
       return incidents.sort((a, b) => b.startedAt - a.startedAt);
     }
@@ -779,8 +851,8 @@
       disconnections.forEach(incident => events.push({
         key: 'connection',
         severity: 'critical',
-        title: incident.active ? 'Desconexión activa' : 'Desconexión detectada',
-        message: incident.active ? `${formatDuration(incident.durationMs)} desconectado.` : `Duración: ${formatDuration(incident.durationMs)}.`,
+        title: incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada',
+        message: `${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${formatDuration(incident.durationMs)}. Última interfaz del UPS: ${incident.upsInterface}.`,
         time: incident.startedAt
       }));
       return events.sort((a, b) => b.time - a.time).slice(0, 20);
@@ -832,21 +904,24 @@
 
       deviceRows.innerHTML = summaries.length ? summaries.map(({ latest, connection, alerts }) => {
         const temperature = metricValue(latest, metrics[0]);
-        const upsStatus = String(latest.status ?? '—').toUpperCase();
-        const upsClass = upsStatus === 'ONLINE' ? ' info' : ' warning';
+        const upsStatus = readableUpsStatus(latest);
+        const upsClass = normalizedUpsStatus(latest) === 'ONLINE' && connection.connected ? ' info' : ' warning';
         const connectionClass = connection.connected ? '' : ' offline';
-        const connectionLabel = connection.connected ? 'Conectado' : 'Desconectado';
+        const connectionLabel = connection.connected ? 'Comunicando' : 'Sin comunicación';
         const alertClass = alerts.length ? ' warning' : ' neutral';
-        return `<tr class="device-row">
+        const upsStatusCell = connection.connected
+          ? `<span class="pill${upsClass}">${esc(upsStatus)}</span>`
+          : `<span class="pill${upsClass}">Último: ${esc(upsStatus)}</span><span class="stale-note">Sin confirmar actualmente</span>`;
+        return `<tr class="device-row${connection.connected ? '' : ' stale-row'}">
           <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(latest.device_id)}</button></td>
           <td><span class="pill${connectionClass}">${connectionLabel}</span></td>
-          <td><span class="pill${upsClass}">${esc(upsStatus)}</span></td>
-          <td>${esc(formatTime(latest.received_at))}<br><span class="muted">Hace ${esc(formatDuration(connection.ageMs))}</span></td>
-          <td>${esc(formatMetric(temperature, '°C'))}</td>
-          <td>${esc(formatMetric(numberValue(latest.input_voltage), 'V'))}</td>
-          <td>${esc(formatMetric(numberValue(latest.output_voltage), 'V'))}</td>
-          <td>${esc(formatMetric(numberValue(latest.battery_voltage), 'V'))}</td>
-          <td>${esc(formatMetric(numberValue(latest.load_percent), '%'))}</td>
+          <td>${upsStatusCell}</td>
+          <td>${esc(formatTime(latest.received_at))}<br><span class="${connection.connected ? 'muted' : 'stale-note'}">${connection.connected ? 'Recibido hace' : 'Sin datos desde hace'} ${esc(formatDuration(connection.ageMs))}</span></td>
+          <td>${overviewMetric(temperature, '°C', connection.connected)}</td>
+          <td>${overviewMetric(numberValue(latest.input_voltage), 'V', connection.connected)}</td>
+          <td>${overviewMetric(numberValue(latest.output_voltage), 'V', connection.connected)}</td>
+          <td>${overviewMetric(numberValue(latest.battery_voltage), 'V', connection.connected)}</td>
+          <td>${overviewMetric(numberValue(latest.load_percent), '%', connection.connected)}</td>
           <td><span class="pill${alertClass}">${alerts.length}</span></td>
           <td><button class="app-button secondary row-action" type="button" data-open-device="${esc(latest.device_id)}">Abrir equipo</button></td>
         </tr>`;
@@ -949,15 +1024,20 @@
       const totalDowntime = disconnections.reduce((total, incident) => total + incident.durationMs, 0);
 
       document.querySelector('#detail-device').textContent = deviceId;
-      document.querySelector('#detail-connection').textContent = connection.connected ? 'Conectado' : 'Desconectado';
-      document.querySelector('#detail-downtime').textContent = activeDisconnection ? `${formatDuration(activeDisconnection.durationMs)} sin conexión` : 'Sin desconexión activa';
-      document.querySelector('#detail-ups-status').textContent = String(latest.status ?? '—').toUpperCase();
+      document.querySelector('#detail-connection').textContent = connection.connected ? 'Comunicando datos' : 'Sin comunicación';
+      document.querySelector('#detail-downtime').textContent = activeDisconnection
+        ? `Hace ${formatDuration(activeDisconnection.durationMs)} que no se reciben datos`
+        : 'El dispositivo está reportando normalmente';
+      document.querySelector('#detail-ups-status').textContent = readableUpsStatus(latest);
+      document.querySelector('#detail-ups-note').textContent = connection.connected
+        ? `Confirmado en el reporte más reciente · interfaz UPS: ${interfaceDescription(latest)}`
+        : `Dato histórico sin confirmar actualmente · última interfaz UPS: ${interfaceDescription(latest)}`;
       document.querySelector('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
-      document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · hace ${formatDuration(connection.ageMs)}`;
+      document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · recibido hace ${formatDuration(connection.ageMs)}`;
       document.querySelector('#detail-disconnections').textContent = disconnections.length;
       document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo`;
       document.querySelector('#detail-alerts').textContent = alerts.length;
-      document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Requieren revisión' : 'Sin alertas activas';
+      document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Hay situaciones que requieren revisión' : 'No hay alertas activas';
 
       document.querySelector('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `
         <article class="incident-item">
@@ -969,13 +1049,13 @@
       document.querySelector('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `
         <article class="incident-item">
           <span class="incident-icon critical">!</span>
-          <div class="incident-copy"><strong>${incident.active ? 'Desconexión activa' : 'Desconexión recuperada'}</strong><span>Duración: ${esc(formatDuration(incident.durationMs))}</span></div>
+          <div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}. Última interfaz del UPS: ${esc(incident.upsInterface)}.</span></div>
           <time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time>
         </article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
 
       historyRows.innerHTML = deviceRecordsDescending.slice(0, limit).map(record => {
         const temperature = metricValue(record, metrics[0]);
-        return `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${String(record.status).toUpperCase() === 'ONLINE' ? ' info' : ' warning'}">${esc(record.status)}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(record.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.load_percent), '%'))}</td><td>${esc(record.sequence)}</td></tr>`;
+        return `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedUpsStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableUpsStatus(record))}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(record.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.load_percent), '%'))}</td><td>${esc(record.sequence)}</td></tr>`;
       }).join('');
       metrics.forEach(metric => renderLineChart(metric, deviceRecords));
     }
@@ -992,7 +1072,7 @@
     async function loadRecords(fullHistory = false) {
       if (loadingRecords) return;
       loadingRecords = true;
-      document.querySelector('#update-state').textContent = 'Cargando';
+      document.querySelector('#update-state').textContent = 'Actualizando el resumen…';
       try {
         const collected = [];
         const pages = fullHistory ? 5 : 1;
@@ -1007,10 +1087,12 @@
         renderOverview();
         renderDeviceDetail();
         document.querySelector('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones cargadas`;
-        document.querySelector('#update-state').textContent = 'Datos en vivo';
+        document.querySelector('#update-state').textContent = 'Situaciones que requieren revisión';
+        setServerState(true, 'Servidor conectado');
       } catch (error) {
         document.querySelector('#last-update').textContent = 'Error: ' + error.message;
-        document.querySelector('#update-state').textContent = 'Error de actualización';
+        document.querySelector('#update-state').textContent = 'No fue posible actualizar las alertas';
+        setServerState(false, 'Servidor sin conexión');
       } finally {
         loadingRecords = false;
       }
