@@ -360,6 +360,36 @@
     .detail-empty { padding: 50px 24px; border: 1px dashed #bed6e2; border-radius: 15px; color: var(--muted); background: rgba(255, 255, 255, .72); text-align: center; }
     .detail-empty h3 { margin-bottom: 7px; color: var(--brand-blue-deep); }
 
+    /* Alta inicial y administración multiusuario */
+    .onboarding-view { min-height: 100vh; padding: clamp(28px, 5vw, 72px) 20px; background: linear-gradient(135deg, #fafdff, #eaf6fc); }
+    .onboarding-card { width: min(900px, 100%); margin: auto; padding: clamp(26px, 5vw, 52px); border: 1px solid #cfe3ee; border-radius: 24px; background: #fff; box-shadow: 0 24px 70px rgba(34, 100, 133, .15); }
+    .onboarding-card h2 { margin-bottom: 9px; color: var(--brand-blue-deep); font-size: clamp(27px, 4vw, 42px); }
+    .onboarding-intro { color: var(--muted); font-size: 16px; line-height: 1.6; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 26px; }
+    .form-grid .wide { grid-column: 1 / -1; }
+    .plain-field label { display: block; margin-bottom: 7px; color: #345b72; font-size: 13px; font-weight: 800; }
+    .plain-field input, .plain-field select, .plain-field textarea {
+      width: 100%; min-height: 49px; padding: 11px 13px; border: 1px solid #c5dce7; border-radius: 10px;
+      outline: none; color: var(--ink); background: #fbfdff;
+    }
+    .plain-field textarea { min-height: 105px; resize: vertical; line-height: 1.5; }
+    .plain-field input:focus, .plain-field select:focus, .plain-field textarea:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 4px rgba(12, 145, 199, .1); }
+    .field-help { display: block; margin-top: 6px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .onboarding-actions { display: flex; align-items: center; gap: 14px; margin-top: 25px; }
+    .onboarding-message { min-height: 22px; margin-top: 14px; color: #a73725; font-weight: 650; }
+    .project-context { display: flex; align-items: center; gap: 10px; }
+    .project-context select { max-width: 245px; min-height: 41px; padding: 8px 32px 8px 11px; border: 1px solid #b9d6e4; border-radius: 9px; color: var(--brand-blue-deep); background: #fff; font-weight: 750; }
+    .management-grid { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); gap: 20px; }
+    .management-form { padding: 22px; }
+    .management-form .plain-field + .plain-field { margin-top: 15px; }
+    .management-message { min-height: 22px; margin: 13px 0 0; color: #a73725; font-size: 14px; }
+    .device-catalog { padding: 18px; }
+    .device-catalog-item { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid #dce9ef; border-radius: 11px; background: #fbfdfe; }
+    .device-catalog-item + .device-catalog-item { margin-top: 10px; }
+    .device-catalog-item strong { display: block; color: var(--brand-blue-deep); }
+    .device-catalog-item span { color: var(--muted); font-size: 13px; }
+    .project-description { margin-top: 18px; padding: 16px; border: 1px solid #cde3ed; border-radius: 12px; color: #345b72; background: #f5fbfe; line-height: 1.55; }
+
     @media (max-width: 980px) {
       .auth-view { grid-template-columns: 1fr; }
       .brand-hero { min-height: 34vh; padding: 46px 28px 25px; text-align: center; }
@@ -380,6 +410,7 @@
       .detail-columns { grid-template-columns: 1fr; }
       .charts-grid { grid-template-columns: 1fr; }
       .chart-card:first-child { grid-column: auto; }
+      .management-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
@@ -408,6 +439,9 @@
       .select-field { width: 100%; min-width: 0; }
       .filter-meta { margin-left: 0; padding: 0; }
       .detail-summary { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-grid .wide { grid-column: auto; }
+      .project-context select { max-width: 165px; }
       .chart-card { padding: 16px 13px; }
       .chart-header { align-items: flex-start; }
       .chart-current { font-size: 21px; }
@@ -430,9 +464,10 @@
   <header class="app-header">
     <div class="app-title">
       <img src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
-      <div><h1>Monitor UPS IoT</h1><p>Telemetría disponible desde cualquier dispositivo</p></div>
+      <div><h1 id="header-project-title">Monitor IoT</h1><p id="header-company-name">Cargando espacio de trabajo…</p></div>
     </div>
     <div class="app-header-actions">
+      <div class="project-context"><select id="project-select" class="hidden" aria-label="Seleccionar proyecto"></select></div>
       <span id="server-status" class="live-badge"><span class="live-dot"></span><span id="server-status-text">Conectando con servidor</span></span>
       <button id="logout" class="app-button secondary hidden">Cerrar sesión</button>
     </div>
@@ -504,6 +539,27 @@
       </div>
     </section>
 
+    <section id="onboarding" class="onboarding-view hidden">
+      <section class="onboarding-card" aria-labelledby="onboarding-title">
+        <span class="page-kicker">Primera configuración</span>
+        <h2 id="onboarding-title">Preparemos tu espacio de monitoreo</h2>
+        <p class="onboarding-intro">Esta información se solicita una sola vez. Crearemos un espacio privado para tu empresa y una interfaz adaptada al tipo de proyecto.</p>
+        <form id="onboarding-form">
+          <div class="form-grid">
+            <div class="plain-field"><label for="onboarding-name">Tu nombre</label><input id="onboarding-name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Nombre del responsable"></div>
+            <div class="plain-field"><label for="onboarding-company">Empresa u organización</label><input id="onboarding-company" required minlength="2" maxlength="120" autocomplete="organization" placeholder="Ej. WiMobile"></div>
+            <div class="plain-field wide"><label for="onboarding-description">¿A qué se dedica tu empresa y qué deseas monitorear?</label><textarea id="onboarding-description" required minlength="10" maxlength="1000" placeholder="Describe brevemente la actividad y el objetivo del monitoreo"></textarea></div>
+            <div class="plain-field"><label for="onboarding-project">Nombre del proyecto</label><input id="onboarding-project" required minlength="2" maxlength="120" placeholder="Ej. Acuarios planta norte"></div>
+            <div class="plain-field"><label for="onboarding-type">Tipo de monitoreo</label><select id="onboarding-type" required><option value="ups">UPS y energía</option><option value="agriculture">Cosechas y agricultura</option><option value="aquarium">Temperatura de acuarios</option><option value="generic">Otro proyecto IoT</option></select></div>
+            <div class="plain-field"><label for="onboarding-device">ID del primer dispositivo (opcional)</label><input id="onboarding-device" maxlength="80" placeholder="Ej. MUPS-01436666"><span class="field-help">Debe coincidir exactamente con el ID que envía el equipo.</span></div>
+            <div class="plain-field"><label for="onboarding-code">Código de vinculación (opcional)</label><input id="onboarding-code" maxlength="120" autocomplete="off" placeholder="Código entregado con el equipo"><span class="field-help">Evita que otra cuenta reclame tu dispositivo.</span></div>
+          </div>
+          <div class="onboarding-actions"><button id="onboarding-button" class="primary-button" type="submit">Crear mi espacio privado</button><button id="onboarding-logout" class="reset-button" type="button">Cerrar sesión</button></div>
+          <div id="onboarding-message" class="onboarding-message" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+    </section>
+
     <section id="dashboard" class="hidden">
       <div class="dashboard-shell">
         <aside class="dashboard-sidebar" aria-label="Navegación del panel">
@@ -516,16 +572,20 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/><path d="M2 21h20"/></svg>
             <span>Estadísticas del equipo</span>
           </button>
-          <p class="sidebar-note"><strong>Monitor UPS IoT</strong>Revisa primero si el dispositivo está comunicando. Después consulta el último estado y las mediciones informadas por el UPS.</p>
+          <button class="nav-button" type="button" data-panel="devices-panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
+            <span>Mis dispositivos</span>
+          </button>
+          <p class="sidebar-note"><strong id="sidebar-project-name">Proyecto IoT</strong><span id="sidebar-project-description">Tus equipos y lecturas están separados de los demás usuarios.</span></p>
         </aside>
 
         <div class="dashboard-content">
           <section id="overview-panel" class="dashboard-panel">
             <div class="page-heading">
               <div>
-                <span class="page-kicker">Monitoreo centralizado</span>
-                <h2>Equipos monitoreados</h2>
-                <p>Consulta la comunicación de cada dispositivo, el último estado informado por el UPS y sus mediciones más recientes.</p>
+                <span id="overview-kicker" class="page-kicker">Monitoreo centralizado</span>
+                <h2 id="overview-title">Equipos monitoreados</h2>
+                <p id="overview-description">Consulta la comunicación de cada dispositivo y sus mediciones más recientes.</p>
               </div>
               <button id="refresh" class="app-button" type="button">Actualizar datos</button>
             </div>
@@ -542,10 +602,10 @@
                 <div><h3>Estado general de los equipos</h3><span id="last-update" class="muted">Cargando información…</span></div>
                 <span class="muted">Selecciona un dispositivo para consultar su ficha completa</span>
               </div>
-              <p class="table-guidance"><strong>Importante:</strong> si un dispositivo aparece sin comunicación, los valores mostrados son su última lectura guardada; no representan necesariamente el estado actual del UPS.</p>
+              <p id="table-guidance" class="table-guidance"><strong>Importante:</strong> si un dispositivo aparece sin comunicación, los valores mostrados son su última lectura guardada; no representan necesariamente el estado actual.</p>
               <div class="table-wrap">
                 <table>
-                  <thead><tr><th>Dispositivo</th><th>Comunicación del dispositivo</th><th>Último estado reportado del UPS</th><th>Último dato recibido</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Alertas</th><th></th></tr></thead>
+                  <thead><tr id="device-table-head"><th>Dispositivo</th><th>Comunicación</th><th>Estado</th><th>Último dato recibido</th><th>Lecturas</th><th>Alertas</th><th></th></tr></thead>
                   <tbody id="device-rows"><tr><td colspan="11" class="empty">Cargando equipos…</td></tr></tbody>
                 </table>
               </div>
@@ -556,8 +616,8 @@
             <div class="page-heading">
               <div>
                 <span class="page-kicker">Análisis individual</span>
-                <h2>Estadísticas del equipo</h2>
-                <p>Distingue la comunicación del dispositivo, el estado informado por el UPS y el historial de cada medición.</p>
+                <h2 id="detail-title">Estadísticas del equipo</h2>
+                <p id="detail-description">Consulta la comunicación, alertas e historial de cada medición.</p>
               </div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
             </div>
@@ -584,7 +644,7 @@
               <div class="cards detail-cards detail-summary">
                 <article class="card brand-blue"><span class="label">Dispositivo</span><span id="detail-device" class="value status-value">—</span><span class="card-note">Equipo seleccionado</span></article>
                 <article class="card"><span class="label">Comunicación del dispositivo</span><span id="detail-connection" class="value status-value">—</span><span id="detail-downtime" class="card-note">Sin mediciones</span></article>
-                <article class="card brand-orange"><span class="label">Último estado reportado del UPS</span><span id="detail-ups-status" class="value status-value">—</span><span id="detail-ups-note" class="card-note">Todavía no existe un reporte</span></article>
+                <article class="card brand-orange"><span id="detail-status-label" class="label">Último estado reportado</span><span id="detail-ups-status" class="value status-value">—</span><span id="detail-ups-note" class="card-note">Todavía no existe un reporte</span></article>
                 <article class="card"><span class="label">Último dato recibido</span><span id="detail-last-seen" class="value status-value">—</span><span id="detail-last-age" class="card-note">Sin mediciones</span></article>
                 <article class="card"><span class="label">Pérdidas de comunicación</span><span id="detail-disconnections" class="value">0</span><span id="detail-total-downtime" class="card-note">0 s en el periodo</span></article>
                 <article class="card"><span class="label">Alertas activas</span><span id="detail-alerts" class="value">0</span><span id="detail-alerts-note" class="card-note">Sin alertas</span></article>
@@ -592,18 +652,18 @@
 
               <div class="detail-columns">
                 <section class="section-card">
-                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Eventos reportados por el UPS y problemas de comunicación detectados por la plataforma</span></div></div>
+                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span id="alerts-subtitle" class="muted">Eventos reportados por el equipo y problemas de comunicación detectados por la plataforma</span></div></div>
                   <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
-                  <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
+                  <div id="threshold-note" class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
                 </section>
                 <section class="section-card">
                   <div class="toolbar"><div><h3>Pérdidas de comunicación detectadas</h3><span class="muted">Periodos en los que la plataforma dejó de recibir datos del dispositivo</span></div></div>
                   <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
-                  <div class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos. La interfaz USB o RS-485 se indicará cuando el dispositivo la incluya en su reporte; de lo contrario se mostrará como “interfaz no reportada”.</div>
+                  <div id="disconnect-threshold-note" class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos.</div>
                 </section>
               </div>
 
-              <div class="charts-grid section-stack">
+              <div id="charts-grid" class="charts-grid section-stack">
                 <article class="chart-card" style="--chart-color:#ed6d05">
                   <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Temperatura</h3><span>Grados Celsius</span></div></div><strong id="current-temperature" class="chart-current">—</strong></div>
                   <div id="chart-temperature" class="chart" role="img" aria-label="Gráfica de temperatura"></div>
@@ -632,7 +692,7 @@
                 </div>
                 <div class="table-wrap">
                   <table class="history">
-                    <thead><tr><th>Fecha y hora</th><th>Estado reportado del UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
+                    <thead><tr id="history-table-head"><th>Fecha y hora</th><th>Estado</th><th>Lecturas</th><th>Secuencia</th></tr></thead>
                     <tbody id="history-rows"><tr><td colspan="8" class="empty">Selecciona un equipo.</td></tr></tbody>
                   </table>
                 </div>
@@ -640,515 +700,36 @@
             </div>
             <div id="device-detail-empty" class="detail-empty hidden"><h3>No hay datos para mostrar</h3><p>Cuando un dispositivo envíe telemetría aparecerán aquí sus gráficas.</p></div>
           </section>
+
+          <section id="devices-panel" class="dashboard-panel hidden">
+            <div class="page-heading">
+              <div><span class="page-kicker">Configuración segura</span><h2>Mis dispositivos</h2><p>Vincula únicamente equipos que pertenecen a este proyecto.</p></div>
+              <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
+            </div>
+            <div class="management-grid">
+              <section class="section-card">
+                <div class="toolbar"><div><h3>Agregar dispositivo</h3><span class="muted">Necesitas el ID y código de vinculación entregados con el equipo.</span></div></div>
+                <form id="claim-device-form" class="management-form">
+                  <div class="plain-field"><label for="claim-device-id">ID del dispositivo</label><input id="claim-device-id" required maxlength="80" placeholder="Ej. MUPS-01436666"></div>
+                  <div class="plain-field"><label for="claim-display-name">Nombre visible (opcional)</label><input id="claim-display-name" maxlength="120" placeholder="Ej. UPS oficina principal"></div>
+                  <div class="plain-field"><label for="claim-code">Código de vinculación</label><input id="claim-code" required minlength="8" maxlength="120" autocomplete="off" placeholder="Código privado del equipo"></div>
+                  <button id="claim-device-button" class="app-button" type="submit">Vincular dispositivo</button>
+                  <div id="claim-device-message" class="management-message" role="status" aria-live="polite"></div>
+                </form>
+              </section>
+              <section class="section-card">
+                <div class="toolbar"><div><h3>Equipos vinculados</h3><span id="device-catalog-meta" class="muted">Cargando…</span></div></div>
+                <div id="device-catalog" class="device-catalog"><div class="empty">Todavía no hay dispositivos vinculados.</div></div>
+              </section>
+            </div>
+            <div id="workspace-description" class="project-description"></div>
+          </section>
         </div>
       </div>
     </section>
   </main>
 
-  <script>
-    const config = { url: {{ supabase_url|tojson }}, key: {{ supabase_publishable_key|tojson }}, error: {{ configuration_error|tojson }} };
-    const client = config.url && config.key ? supabase.createClient(config.url, config.key) : null;
-    const login = document.querySelector('#login');
-    const dashboard = document.querySelector('#dashboard');
-    const logout = document.querySelector('#logout');
-    const deviceRows = document.querySelector('#device-rows');
-    const historyRows = document.querySelector('#history-rows');
-    const deviceSelect = document.querySelector('#device-select');
-    const rangeSelect = document.querySelector('#range-select');
-    const message = document.querySelector('#login-message');
-    const loginButton = document.querySelector('#login-button');
-    const passwordInput = document.querySelector('#password');
-    const passwordToggle = document.querySelector('#toggle-password');
-    const esc = value => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-    let allRecords = [];
-    let loadingRecords = false;
-
-    const rules = {
-      offlineAfterMs: 30_000,
-      inputMin: 100,
-      inputMax: 140,
-      outputMin: 100,
-      outputMax: 140,
-      batteryMin: 10.5,
-      loadMax: 90,
-      temperatureMax: 50
-    };
-
-    const metrics = [
-      { container: 'chart-temperature', current: 'current-temperature', keys: ['temperature_c', 'temperature'], unit: '°C', label: 'Temperatura' },
-      { container: 'chart-input', current: 'current-input', keys: ['input_voltage'], unit: 'V', label: 'Voltaje de entrada' },
-      { container: 'chart-output', current: 'current-output', keys: ['output_voltage'], unit: 'V', label: 'Voltaje de salida' },
-      { container: 'chart-battery', current: 'current-battery', keys: ['battery_voltage'], unit: 'V', label: 'Voltaje de batería' },
-      { container: 'chart-load', current: 'current-load', keys: ['load_percent'], unit: '%', label: 'Carga', fixedMin: 0, fixedMax: 100 }
-    ];
-
-    const numberValue = value => {
-      if (value === null || value === undefined || value === '') return null;
-      const number = Number(value);
-      return Number.isFinite(number) ? number : null;
-    };
-
-    const metricValue = (record, metric) => {
-      for (const key of metric.keys) {
-        const value = numberValue(record?.[key]);
-        if (value !== null) return value;
-      }
-      return null;
-    };
-
-    const formatMetric = (value, unit) => value === null ? '—' : `${Number(value.toFixed(2))} ${unit}`;
-    const formatTime = value => new Date(value).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-    const formatDuration = milliseconds => {
-      const seconds = Math.max(0, Math.floor(milliseconds / 1000));
-      if (seconds < 60) return `${seconds} s`;
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return `${minutes} min ${seconds % 60} s`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours} h ${minutes % 60} min`;
-      const days = Math.floor(hours / 24);
-      return `${days} d ${hours % 24} h`;
-    };
-
-    const normalizedUpsStatus = record => String(record?.status ?? 'SIN_DATO').trim().toUpperCase();
-
-    function readableUpsStatus(record) {
-      const status = normalizedUpsStatus(record);
-      const labels = {
-        ONLINE: 'Operación normal',
-        ON_BATTERY: 'Trabajando con batería',
-        BATTERY: 'Trabajando con batería',
-        LOW_BATTERY: 'Batería baja',
-        UPS_DISCONNECTED: 'UPS sin comunicación',
-        DISCONNECTED: 'UPS sin comunicación',
-        OFFLINE: 'UPS apagado o sin comunicación',
-        FAULT: 'Falla reportada',
-        SIN_DATO: 'Sin estado reportado'
-      };
-      return labels[status] ?? status.replaceAll('_', ' ').toLowerCase().replace(/^./, character => character.toUpperCase());
-    }
-
-    function reportedInterface(record) {
-      const raw = String(
-        record?.ups_interface ?? record?.interface_type ?? record?.data_interface ?? record?.source_interface ?? ''
-      ).trim().toUpperCase();
-      if (raw.includes('USB')) return 'USB';
-      if (raw.includes('485')) return 'RS-485';
-      return '';
-    }
-
-    const interfaceDescription = record => reportedInterface(record) || 'interfaz no reportada';
-
-    function overviewMetric(value, unit, connected) {
-      const formatted = esc(formatMetric(value, unit));
-      if (connected) return formatted;
-      return `<span class="last-reading">${formatted}</span><span class="stale-note">Último dato recibido</span>`;
-    }
-
-    function setServerState(connected, text) {
-      const badge = document.querySelector('#server-status');
-      document.querySelector('#server-status-text').textContent = text;
-      badge.classList.toggle('error', !connected);
-    }
-
-    const validTime = record => {
-      const time = new Date(record?.received_at).getTime();
-      return Number.isFinite(time) ? time : 0;
-    };
-
-    function connectionState(record, now = Date.now()) {
-      const lastSeen = validTime(record);
-      const ageMs = lastSeen ? Math.max(0, now - lastSeen) : Number.POSITIVE_INFINITY;
-      return { connected: ageMs <= rules.offlineAfterMs, lastSeen, ageMs };
-    }
-
-    function measurementAlerts(record) {
-      if (!record) return [];
-      const alerts = [];
-      const push = (key, severity, title, message) => alerts.push({ key, severity, title, message, time: validTime(record) });
-      const status = String(record.status ?? 'UNKNOWN').toUpperCase();
-      const temperature = metricValue(record, metrics[0]);
-      const input = numberValue(record.input_voltage);
-      const output = numberValue(record.output_voltage);
-      const battery = numberValue(record.battery_voltage);
-      const load = numberValue(record.load_percent);
-
-      const upsLabel = readableUpsStatus(record);
-      const upsInterface = interfaceDescription(record);
-      if (['UPS_DISCONNECTED', 'DISCONNECTED', 'OFFLINE'].includes(status)) {
-        push('ups-status', 'critical', 'UPS sin comunicación', `El dispositivo reportó pérdida de comunicación con el UPS mediante ${upsInterface}.`);
-      } else if (['ON_BATTERY', 'BATTERY'].includes(status)) {
-        push('ups-status', 'warning', 'UPS trabajando con batería', 'El UPS informó que la alimentación principal no está disponible y está utilizando su batería.');
-      } else if (status === 'LOW_BATTERY') {
-        push('ups-status', 'critical', 'Batería del UPS baja', 'El UPS informó que queda poca energía disponible en su batería.');
-      } else if (status !== 'ONLINE') {
-        push('ups-status', 'warning', `Estado reportado por el UPS: ${upsLabel}`, 'El UPS informó una condición que requiere revisión.');
-      }
-      if (input !== null && (input < rules.inputMin || input > rules.inputMax)) push('input-voltage', 'critical', 'Voltaje de entrada fuera de rango', `Lectura: ${formatMetric(input, 'V')}.`);
-      if (output !== null && (output < rules.outputMin || output > rules.outputMax)) push('output-voltage', 'critical', 'Voltaje de salida fuera de rango', `Lectura: ${formatMetric(output, 'V')}.`);
-      if (battery !== null && battery < rules.batteryMin) push('battery-voltage', 'critical', 'Batería baja', `Lectura: ${formatMetric(battery, 'V')}.`);
-      if (load !== null && load >= rules.loadMax) push('high-load', 'warning', 'Carga elevada', `Lectura: ${formatMetric(load, '%')}.`);
-      if (temperature !== null && temperature >= rules.temperatureMax) push('temperature', 'warning', 'Temperatura elevada', `Lectura: ${formatMetric(temperature, '°C')}.`);
-      return alerts;
-    }
-
-    function currentAlerts(record, now = Date.now()) {
-      const connection = connectionState(record, now);
-      const alerts = connection.connected ? measurementAlerts(record) : [];
-      if (!connection.connected) {
-        alerts.unshift({
-          key: 'connection',
-          severity: 'critical',
-          title: 'Sin comunicación con el dispositivo',
-          message: `La plataforma lleva ${formatDuration(connection.ageMs)} sin recibir datos. Última interfaz del UPS: ${interfaceDescription(record)}.`,
-          time: connection.lastSeen + rules.offlineAfterMs
-        });
-      }
-      return alerts;
-    }
-
-    function detectDisconnections(recordsAscending, now = Date.now()) {
-      const incidents = [];
-      for (let index = 1; index < recordsAscending.length; index += 1) {
-        const previousTime = validTime(recordsAscending[index - 1]);
-        const currentTime = validTime(recordsAscending[index]);
-        const gap = currentTime - previousTime;
-        if (previousTime && currentTime && gap > rules.offlineAfterMs) {
-          const startedAt = previousTime + rules.offlineAfterMs;
-          incidents.push({
-            startedAt,
-            endedAt: currentTime,
-            durationMs: currentTime - startedAt,
-            active: false,
-            upsInterface: interfaceDescription(recordsAscending[index - 1])
-          });
-        }
-      }
-      const latestTime = validTime(recordsAscending[recordsAscending.length - 1]);
-      if (latestTime && now - latestTime > rules.offlineAfterMs) {
-        const startedAt = latestTime + rules.offlineAfterMs;
-        incidents.push({
-          startedAt,
-          endedAt: null,
-          durationMs: now - startedAt,
-          active: true,
-          upsInterface: interfaceDescription(recordsAscending[recordsAscending.length - 1])
-        });
-      }
-      return incidents.sort((a, b) => b.startedAt - a.startedAt);
-    }
-
-    function buildAlertHistory(recordsAscending, disconnections) {
-      const events = [];
-      let previousKeys = new Set();
-      recordsAscending.forEach(record => {
-        const alerts = measurementAlerts(record);
-        const currentKeys = new Set(alerts.map(alert => alert.key));
-        alerts.forEach(alert => {
-          if (!previousKeys.has(alert.key)) events.push(alert);
-        });
-        previousKeys = currentKeys;
-      });
-      disconnections.forEach(incident => events.push({
-        key: 'connection',
-        severity: 'critical',
-        title: incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada',
-        message: `${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${formatDuration(incident.durationMs)}. Última interfaz del UPS: ${incident.upsInterface}.`,
-        time: incident.startedAt
-      }));
-      return events.sort((a, b) => b.time - a.time).slice(0, 20);
-    }
-
-    function showSession(active) {
-      login.classList.toggle('hidden', active);
-      dashboard.classList.toggle('hidden', !active);
-      logout.classList.toggle('hidden', !active);
-      document.body.classList.toggle('session-active', active);
-    }
-
-    function showPanel(panelId) {
-      document.querySelectorAll('.dashboard-panel').forEach(panel => panel.classList.toggle('hidden', panel.id !== panelId));
-      document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.panel === panelId));
-      if (panelId === 'device-panel') renderDeviceDetail();
-    }
-
-    function latestDevices(records) {
-      const devices = new Map();
-      records.forEach(record => {
-        if (record.device_id && !devices.has(record.device_id)) devices.set(record.device_id, record);
-      });
-      return [...devices.values()].sort((a, b) => String(a.device_id).localeCompare(String(b.device_id)));
-    }
-
-    function openDevice(deviceId) {
-      if (!deviceId) return;
-      deviceSelect.value = deviceId;
-      showPanel('device-panel');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function renderOverview() {
-      const devices = latestDevices(allRecords);
-      const now = Date.now();
-      const summaries = devices.map(latest => {
-        const connection = connectionState(latest, now);
-        const alerts = currentAlerts(latest, now);
-        return { latest, connection, alerts };
-      });
-      const connected = summaries.filter(item => item.connection.connected).length;
-      const activeAlertCount = summaries.reduce((total, item) => total + item.alerts.length, 0);
-
-      document.querySelector('#device-count').textContent = devices.length;
-      document.querySelector('#online-count').textContent = connected;
-      document.querySelector('#offline-count').textContent = devices.length - connected;
-      document.querySelector('#active-alert-count').textContent = activeAlertCount;
-
-      deviceRows.innerHTML = summaries.length ? summaries.map(({ latest, connection, alerts }) => {
-        const temperature = metricValue(latest, metrics[0]);
-        const upsStatus = readableUpsStatus(latest);
-        const upsClass = normalizedUpsStatus(latest) === 'ONLINE' && connection.connected ? ' info' : ' warning';
-        const connectionClass = connection.connected ? '' : ' offline';
-        const connectionLabel = connection.connected ? 'Comunicando' : 'Sin comunicación';
-        const alertClass = alerts.length ? ' warning' : ' neutral';
-        const upsStatusCell = connection.connected
-          ? `<span class="pill${upsClass}">${esc(upsStatus)}</span>`
-          : `<span class="pill${upsClass}">Último: ${esc(upsStatus)}</span><span class="stale-note">Sin confirmar actualmente</span>`;
-        return `<tr class="device-row${connection.connected ? '' : ' stale-row'}">
-          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(latest.device_id)}</button></td>
-          <td><span class="pill${connectionClass}">${connectionLabel}</span></td>
-          <td>${upsStatusCell}</td>
-          <td>${esc(formatTime(latest.received_at))}<br><span class="${connection.connected ? 'muted' : 'stale-note'}">${connection.connected ? 'Recibido hace' : 'Sin datos desde hace'} ${esc(formatDuration(connection.ageMs))}</span></td>
-          <td>${overviewMetric(temperature, '°C', connection.connected)}</td>
-          <td>${overviewMetric(numberValue(latest.input_voltage), 'V', connection.connected)}</td>
-          <td>${overviewMetric(numberValue(latest.output_voltage), 'V', connection.connected)}</td>
-          <td>${overviewMetric(numberValue(latest.battery_voltage), 'V', connection.connected)}</td>
-          <td>${overviewMetric(numberValue(latest.load_percent), '%', connection.connected)}</td>
-          <td><span class="pill${alertClass}">${alerts.length}</span></td>
-          <td><button class="app-button secondary row-action" type="button" data-open-device="${esc(latest.device_id)}">Abrir equipo</button></td>
-        </tr>`;
-      }).join('') : '<tr><td colspan="11" class="empty">Todavía no hay equipos con telemetría.</td></tr>';
-
-      const deviceIds = devices.map(record => record.device_id);
-      const previousSelection = deviceSelect.value;
-      deviceSelect.innerHTML = deviceIds.length
-        ? deviceIds.map(device => `<option value="${esc(device)}">${esc(device)}</option>`).join('')
-        : '<option value="">Sin dispositivos</option>';
-      deviceSelect.value = deviceIds.includes(previousSelection) ? previousSelection : (deviceIds[0] ?? '');
-    }
-
-    function renderLineChart(metric, records) {
-      const container = document.querySelector(`#${metric.container}`);
-      const current = document.querySelector(`#${metric.current}`);
-      const points = records.map(record => ({
-        time: new Date(record.received_at),
-        value: metricValue(record, metric)
-      })).filter(point => Number.isFinite(point.time.getTime()) && point.value !== null);
-
-      const latestValue = points.length ? points[points.length - 1].value : null;
-      current.textContent = formatMetric(latestValue, metric.unit);
-
-      if (!points.length) {
-        const hint = metric.keys.includes('temperature_c')
-          ? 'El dispositivo todavía no envía el campo temperature_c.'
-          : 'Todavía no existen lecturas para esta variable.';
-        container.innerHTML = `<div class="chart-empty"><div><strong>Sin datos de ${esc(metric.label.toLowerCase())}</strong>${esc(hint)}</div></div>`;
-        return;
-      }
-
-      const width = 720;
-      const height = 260;
-      const margin = { top: 14, right: 16, bottom: 36, left: 53 };
-      const plotWidth = width - margin.left - margin.right;
-      const plotHeight = height - margin.top - margin.bottom;
-      const values = points.map(point => point.value);
-      let minimum = metric.fixedMin ?? Math.min(...values);
-      let maximum = metric.fixedMax ?? Math.max(...values);
-      if (minimum === maximum) {
-        minimum -= Math.max(Math.abs(minimum) * .05, 1);
-        maximum += Math.max(Math.abs(maximum) * .05, 1);
-      } else if (metric.fixedMin === undefined) {
-        const padding = (maximum - minimum) * .12;
-        minimum -= padding;
-        maximum += padding;
-      }
-
-      const xAt = index => margin.left + (points.length === 1 ? plotWidth / 2 : index * plotWidth / (points.length - 1));
-      const yAt = value => margin.top + (maximum - value) * plotHeight / (maximum - minimum);
-      const coordinates = points.map((point, index) => ({ ...point, x: xAt(index), y: yAt(point.value) }));
-      const linePath = coordinates.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ');
-      const areaPath = `${linePath} L ${coordinates[coordinates.length - 1].x.toFixed(2)} ${(margin.top + plotHeight).toFixed(2)} L ${coordinates[0].x.toFixed(2)} ${(margin.top + plotHeight).toFixed(2)} Z`;
-      const tickCount = 4;
-      const horizontalGrid = Array.from({ length: tickCount + 1 }, (_, index) => {
-        const ratio = index / tickCount;
-        const y = margin.top + ratio * plotHeight;
-        const value = maximum - ratio * (maximum - minimum);
-        return `<line class="chart-grid-line" x1="${margin.left}" x2="${width - margin.right}" y1="${y}" y2="${y}"/><text class="chart-axis-text" x="${margin.left - 9}" y="${y + 3}" text-anchor="end">${esc(Number(value.toFixed(1)))}</text>`;
-      }).join('');
-      const labelIndexes = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
-      const xLabels = labelIndexes.map((index, labelIndex) => {
-        const anchor = labelIndex === 0 ? 'start' : (labelIndex === labelIndexes.length - 1 ? 'end' : 'middle');
-        const label = points[index].time.toLocaleString('es-MX', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-        return `<text class="chart-axis-text" x="${xAt(index)}" y="${height - 10}" text-anchor="${anchor}">${esc(label)}</text>`;
-      }).join('');
-      const circles = coordinates.map(point => {
-        const title = `${point.time.toLocaleString('es-MX')}: ${formatMetric(point.value, metric.unit)}`;
-        return `<circle class="chart-point" cx="${point.x}" cy="${point.y}" r="4"><title>${esc(title)}</title></circle>`;
-      }).join('');
-
-      container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">${horizontalGrid}<path class="chart-area" d="${areaPath}"/><path class="chart-line" d="${linePath}"/>${circles}${xLabels}</svg>`;
-    }
-
-    function renderDeviceDetail() {
-      const deviceId = deviceSelect.value;
-      const limit = Number(rangeSelect.value) || 100;
-      const deviceRecordsDescending = allRecords.filter(record => record.device_id === deviceId);
-      const deviceRecords = deviceRecordsDescending.slice(0, limit).reverse();
-      const latest = deviceRecords[deviceRecords.length - 1];
-      const hasData = Boolean(latest);
-
-      document.querySelector('#device-detail-content').classList.toggle('hidden', !hasData);
-      document.querySelector('#device-detail-empty').classList.toggle('hidden', hasData);
-      document.querySelector('#device-range-meta').textContent = hasData
-        ? `${deviceRecords.length} de ${deviceRecordsDescending.length} mediciones cargadas`
-        : 'Selecciona un equipo con telemetría';
-      if (!hasData) {
-        historyRows.innerHTML = '<tr><td colspan="8" class="empty">No hay mediciones para mostrar.</td></tr>';
-        return;
-      }
-
-      const now = Date.now();
-      const connection = connectionState(latest, now);
-      const disconnections = detectDisconnections(deviceRecords, now);
-      const activeDisconnection = disconnections.find(incident => incident.active);
-      const alerts = currentAlerts(latest, now);
-      const alertHistory = buildAlertHistory(deviceRecords, disconnections);
-      const totalDowntime = disconnections.reduce((total, incident) => total + incident.durationMs, 0);
-
-      document.querySelector('#detail-device').textContent = deviceId;
-      document.querySelector('#detail-connection').textContent = connection.connected ? 'Comunicando datos' : 'Sin comunicación';
-      document.querySelector('#detail-downtime').textContent = activeDisconnection
-        ? `Hace ${formatDuration(activeDisconnection.durationMs)} que no se reciben datos`
-        : 'El dispositivo está reportando normalmente';
-      document.querySelector('#detail-ups-status').textContent = readableUpsStatus(latest);
-      document.querySelector('#detail-ups-note').textContent = connection.connected
-        ? `Confirmado en el reporte más reciente · interfaz UPS: ${interfaceDescription(latest)}`
-        : `Dato histórico sin confirmar actualmente · última interfaz UPS: ${interfaceDescription(latest)}`;
-      document.querySelector('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
-      document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · recibido hace ${formatDuration(connection.ageMs)}`;
-      document.querySelector('#detail-disconnections').textContent = disconnections.length;
-      document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo`;
-      document.querySelector('#detail-alerts').textContent = alerts.length;
-      document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Hay situaciones que requieren revisión' : 'No hay alertas activas';
-
-      document.querySelector('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `
-        <article class="incident-item">
-          <span class="incident-icon${alert.severity === 'critical' ? ' critical' : ''}">!</span>
-          <div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
-          <time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time>
-        </article>`).join('') : '<div class="empty">No se detectaron alertas en este periodo.</div>';
-
-      document.querySelector('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `
-        <article class="incident-item">
-          <span class="incident-icon critical">!</span>
-          <div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}. Última interfaz del UPS: ${esc(incident.upsInterface)}.</span></div>
-          <time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time>
-        </article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
-
-      historyRows.innerHTML = deviceRecordsDescending.slice(0, limit).map(record => {
-        const temperature = metricValue(record, metrics[0]);
-        return `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedUpsStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableUpsStatus(record))}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(record.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.load_percent), '%'))}</td><td>${esc(record.sequence)}</td></tr>`;
-      }).join('');
-      metrics.forEach(metric => renderLineChart(metric, deviceRecords));
-    }
-
-    function mergeLatestRecords(records) {
-      const merged = new Map();
-      [...records, ...allRecords].forEach(record => {
-        const key = record.id ?? `${record.device_id}|${record.sequence}`;
-        if (!merged.has(key)) merged.set(key, record);
-      });
-      return [...merged.values()].sort((a, b) => validTime(b) - validTime(a)).slice(0, 5000);
-    }
-
-    async function loadRecords(fullHistory = false) {
-      if (loadingRecords) return;
-      loadingRecords = true;
-      document.querySelector('#update-state').textContent = 'Actualizando el resumen…';
-      try {
-        const collected = [];
-        const pages = fullHistory ? 5 : 1;
-        for (let page = 0; page < pages; page += 1) {
-          const start = page * 1000;
-          const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).range(start, start + 999);
-          if (error) throw error;
-          collected.push(...data);
-          if (data.length < 1000) break;
-        }
-        allRecords = fullHistory ? collected : mergeLatestRecords(collected);
-        renderOverview();
-        renderDeviceDetail();
-        document.querySelector('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones cargadas`;
-        document.querySelector('#update-state').textContent = 'Situaciones que requieren revisión';
-        setServerState(true, 'Servidor conectado');
-      } catch (error) {
-        document.querySelector('#last-update').textContent = 'Error: ' + error.message;
-        document.querySelector('#update-state').textContent = 'No fue posible actualizar las alertas';
-        setServerState(false, 'Servidor sin conexión');
-      } finally {
-        loadingRecords = false;
-      }
-    }
-
-    document.querySelector('#login-form').addEventListener('submit', async event => {
-      event.preventDefault();
-      if (!client) return;
-      message.textContent = 'Ingresando…';
-      loginButton.disabled = true;
-      const { error } = await client.auth.signInWithPassword({
-        email: document.querySelector('#email').value,
-        password: passwordInput.value
-      });
-      loginButton.disabled = false;
-      message.textContent = error ? 'No se pudo iniciar sesión. Verifica tu correo y contraseña.' : '';
-    });
-
-    document.querySelector('#login-form').addEventListener('reset', () => {
-      message.textContent = '';
-      setTimeout(() => document.querySelector('#email').focus(), 0);
-    });
-
-    passwordToggle.addEventListener('click', () => {
-      const showing = passwordInput.type === 'text';
-      passwordInput.type = showing ? 'password' : 'text';
-      passwordToggle.setAttribute('aria-label', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
-      passwordToggle.setAttribute('title', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
-    });
-
-    document.querySelectorAll('.nav-button').forEach(button => {
-      button.addEventListener('click', () => showPanel(button.dataset.panel));
-    });
-    document.querySelector('[data-show-overview]').addEventListener('click', () => showPanel('overview-panel'));
-    deviceRows.addEventListener('click', event => {
-      const trigger = event.target.closest('[data-open-device]');
-      if (trigger) openDevice(trigger.dataset.openDevice);
-    });
-    deviceSelect.addEventListener('change', renderDeviceDetail);
-    rangeSelect.addEventListener('change', renderDeviceDetail);
-    logout.addEventListener('click', () => client.auth.signOut());
-    document.querySelector('#refresh').addEventListener('click', () => loadRecords(true));
-
-    if (!client) {
-      loginButton.disabled = true;
-      message.textContent = 'Configuración incompleta en Render: ' + config.error;
-    } else {
-      client.auth.onAuthStateChange((_event, session) => {
-        showSession(Boolean(session));
-        if (session) setTimeout(() => loadRecords(true), 0);
-      });
-      client.channel('telemetry-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => loadRecords(false)).subscribe();
-      setInterval(() => {
-        if (!dashboard.classList.contains('hidden')) loadRecords(false);
-      }, 5000);
-    }
-  </script>
+  <script>window.MONITOR_CONFIG = { url: {{ supabase_url|tojson }}, key: {{ supabase_publishable_key|tojson }}, error: {{ configuration_error|tojson }} };</script>
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 </body>
 </html>
