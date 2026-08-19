@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
@@ -32,6 +33,8 @@ def parse_decimal(value: object, field: str, minimum: str, maximum: str) -> floa
     except (InvalidOperation, ValueError):
         raise ValueError(f"{field} debe ser numérico") from None
 
+    if not number.is_finite():
+        raise ValueError(f"{field} debe ser un número finito")
     if not Decimal(minimum) <= number <= Decimal(maximum):
         raise ValueError(f"{field} está fuera del rango permitido")
     return float(number)
@@ -41,6 +44,23 @@ def parse_optional_decimal(value: object, field: str, minimum: str, maximum: str
     if value is None or str(value).strip() == "":
         return None
     return parse_decimal(value, field, minimum, maximum)
+
+
+def parse_metric_values(value: object) -> dict[str, float]:
+    if value in (None, ""):
+        return {}
+    if not isinstance(value, dict):
+        raise ValueError("metrics debe ser un objeto JSON")
+    if len(value) > 32:
+        raise ValueError("metrics admite como máximo 32 variables")
+
+    metrics: dict[str, float] = {}
+    for raw_key, raw_value in value.items():
+        key = str(raw_key).strip().lower()
+        if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", key):
+            raise ValueError(f"Nombre de métrica no válido: {raw_key}")
+        metrics[key] = parse_decimal(raw_value, f"metrics.{key}", "-1000000000", "1000000000")
+    return metrics
 
 
 def parse_telemetry(payload: dict) -> dict:
@@ -56,21 +76,31 @@ def parse_telemetry(payload: dict) -> dict:
         sequence = int(payload.get("sequence"))
     except (TypeError, ValueError):
         raise ValueError("sequence debe ser un número entero") from None
-    if sequence < 0:
-        raise ValueError("sequence no puede ser negativo")
+    if sequence < 0 or sequence > 9_223_372_036_854_775_807:
+        raise ValueError("sequence está fuera del rango permitido")
 
-    record = {
+    metric_values = parse_metric_values(payload.get("metrics"))
+    record: dict = {
         "received_at": datetime.now(timezone.utc).isoformat(),
         "device_id": device_id,
         "sequence": sequence,
         "status": status,
-        "input_voltage": parse_decimal(payload.get("input_voltage"), "input_voltage", "0", "999.99"),
-        "output_voltage": parse_decimal(payload.get("output_voltage"), "output_voltage", "0", "999.99"),
-        "battery_voltage": parse_decimal(payload.get("battery_voltage"), "battery_voltage", "0", "999.99"),
-        "load_percent": parse_decimal(payload.get("load_percent"), "load_percent", "0", "100"),
         "source_ip": request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip(),
         "raw_payload": str(payload.get("raw_payload", ""))[:1000] or None,
+        "metric_values": metric_values,
     }
+
+    ups_fields = {
+        "input_voltage": ("0", "999.99"),
+        "output_voltage": ("0", "999.99"),
+        "battery_voltage": ("0", "999.99"),
+        "load_percent": ("0", "100"),
+    }
+    # El protocolo UPS existente conserva sus cuatro campos obligatorios. Los
+    # proyectos genéricos pueden enviar solamente el objeto "metrics".
+    for field, (minimum, maximum) in ups_fields.items():
+        if field in payload or not metric_values:
+            record[field] = parse_decimal(payload.get(field), field, minimum, maximum)
 
     # La temperatura es opcional para conservar compatibilidad con los equipos
     # actuales. Solo se envía a Supabase cuando el dispositivo la incluye.
@@ -81,6 +111,37 @@ def parse_telemetry(payload: dict) -> dict:
         )
 
     return record
+
+
+def supabase_headers(prefer: str | None = None) -> dict[str, str]:
+    headers = {
+        "apikey": SUPABASE_SECRET_KEY,
+        "Authorization": f"Bearer {SUPABASE_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
+    if prefer:
+        headers["Prefer"] = prefer
+    return headers
+
+
+def attach_device_scope(record: dict) -> None:
+    """Relaciona la lectura con su proyecto sin confiar en datos del cliente."""
+    response = requests.get(
+        f"{SUPABASE_URL}/rest/v1/devices",
+        headers=supabase_headers(),
+        params={
+            "select": "id,project_id",
+            "device_id": f"eq.{record['device_id']}",
+            "limit": "1",
+        },
+        timeout=15,
+    )
+    if not response.ok:
+        raise RuntimeError(f"No fue posible resolver el dispositivo: {response.status_code}")
+    devices = response.json()
+    if devices:
+        record["device_uuid"] = devices[0]["id"]
+        record["project_id"] = devices[0]["project_id"]
 
 
 @app.get("/")
@@ -112,17 +173,16 @@ def receive_telemetry():
 
     try:
         record = parse_telemetry(body)
+        attach_device_scope(record)
     except ValueError as error:
         return jsonify({"ok": False, "error": str(error)}), 400
+    except RuntimeError as error:
+        app.logger.error("%s", error)
+        return jsonify({"ok": False, "error": "No fue posible identificar el proyecto del dispositivo"}), 502
 
     response = requests.post(
         f"{SUPABASE_URL}/rest/v1/telemetry",
-        headers={
-            "apikey": SUPABASE_SECRET_KEY,
-            "Authorization": f"Bearer {SUPABASE_SECRET_KEY}",
-            "Content-Type": "application/json",
-            "Prefer": "return=representation",
-        },
+        headers=supabase_headers("return=representation"),
         json=record,
         timeout=15,
     )
