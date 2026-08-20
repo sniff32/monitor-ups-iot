@@ -77,6 +77,39 @@
     }
   };
 
+  const metricDefinitions = {
+    input_voltage: { unit: 'V', label: 'Voltaje de entrada', description: 'Tensión eléctrica recibida por el equipo' },
+    output_voltage: { unit: 'V', label: 'Voltaje de salida', description: 'Tensión eléctrica entregada por el equipo' },
+    battery_voltage: { unit: 'V', label: 'Voltaje de batería', description: 'Tensión reportada por la batería' },
+    load_percent: { unit: '%', label: 'Carga', description: 'Porcentaje de capacidad utilizada', fixedMin: 0, fixedMax: 100 },
+    battery_percent: { unit: '%', label: 'Nivel de batería', description: 'Porcentaje de batería disponible', fixedMin: 0, fixedMax: 100 },
+    temperature_c: { unit: '°C', label: 'Temperatura', description: 'Temperatura reportada por el dispositivo' },
+    water_temperature_c: { unit: '°C', label: 'Temperatura del agua', description: 'Temperatura reportada por la sonda' },
+    input_current_a: { unit: 'A', label: 'Corriente de entrada', description: 'Corriente recibida por el equipo' },
+    output_current_a: { unit: 'A', label: 'Corriente de salida', description: 'Corriente entregada por el equipo' },
+    battery_current_a: { unit: 'A', label: 'Corriente de batería', description: 'Corriente reportada por la batería' },
+    active_power_w: { unit: 'W', label: 'Potencia activa', description: 'Potencia activa reportada' },
+    apparent_power_va: { unit: 'VA', label: 'Potencia aparente', description: 'Potencia aparente reportada' },
+    reactive_power_var: { unit: 'var', label: 'Potencia reactiva', description: 'Potencia reactiva reportada' },
+    energy_wh: { unit: 'Wh', label: 'Energía acumulada', description: 'Energía acumulada reportada' },
+    energy_kwh: { unit: 'kWh', label: 'Energía acumulada', description: 'Energía acumulada reportada' },
+    input_frequency_hz: { unit: 'Hz', label: 'Frecuencia de entrada', description: 'Frecuencia eléctrica recibida' },
+    output_frequency_hz: { unit: 'Hz', label: 'Frecuencia de salida', description: 'Frecuencia eléctrica entregada' },
+    frequency_hz: { unit: 'Hz', label: 'Frecuencia', description: 'Frecuencia reportada por el equipo' },
+    runtime_minutes: { unit: 'min', label: 'Autonomía estimada', description: 'Tiempo de funcionamiento restante' },
+    power_factor: { unit: '', label: 'Factor de potencia', description: 'Relación entre potencia activa y aparente' },
+    humidity_percent: { unit: '%', label: 'Humedad ambiental', description: 'Humedad relativa reportada', fixedMin: 0, fixedMax: 100 },
+    soil_moisture_percent: { unit: '%', label: 'Humedad del suelo', description: 'Humedad reportada por la sonda', fixedMin: 0, fixedMax: 100 },
+    water_level_percent: { unit: '%', label: 'Nivel del agua', description: 'Nivel de agua reportado', fixedMin: 0, fixedMax: 100 },
+    ph: { unit: 'pH', label: 'pH', description: 'Nivel de acidez o alcalinidad', fixedMin: 0, fixedMax: 14 },
+    dissolved_oxygen_mg_l: { unit: 'mg/L', label: 'Oxígeno disuelto', description: 'Oxígeno disuelto reportado' },
+    light_lux: { unit: 'lx', label: 'Iluminación', description: 'Nivel de iluminación reportado' },
+    signal_dbm: { unit: 'dBm', label: 'Señal celular', description: 'Potencia de señal recibida por el módem' },
+    signal_percent: { unit: '%', label: 'Calidad de señal', description: 'Calidad de señal reportada', fixedMin: 0, fixedMax: 100 }
+  };
+
+  const directMetricKeys = ['input_voltage', 'output_voltage', 'battery_voltage', 'load_percent', 'temperature_c'];
+
   let workspace = { profile: {}, projects: [] };
   let currentProject = null;
   let allRecords = [];
@@ -114,6 +147,28 @@
   const formatMetric = (value, unit) => value === null ? '—' : `${Number(value.toFixed(2))} ${unit}`;
   const humanizeKey = key => key.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
 
+  function inferredUnit(key) {
+    if (key === 'ph') return 'pH';
+    const suffixes = [
+      ['_percent', '%'], ['_pct', '%'], ['_temperature_c', '°C'], ['_c', '°C'], ['_temperature_f', '°F'], ['_f', '°F'],
+      ['_voltage', 'V'], ['_v', 'V'], ['_current_a', 'A'], ['_kva', 'kVA'], ['_va', 'VA'], ['_a', 'A'],
+      ['_frequency_hz', 'Hz'], ['_hz', 'Hz'], ['_energy_kwh', 'kWh'], ['_kwh', 'kWh'],
+      ['_energy_wh', 'Wh'], ['_wh', 'Wh'], ['_power_kw', 'kW'], ['_kw', 'kW'], ['_power_w', 'W'], ['_w', 'W'], ['_power_va', 'VA'],
+      ['_var', 'var'], ['_minutes', 'min'], ['_seconds', 's'], ['_mg_l', 'mg/L'], ['_ppm', 'ppm'], ['_lux', 'lx'],
+      ['_dbm', 'dBm'], ['_rpm', 'rpm'], ['_bar', 'bar'], ['_psi', 'psi']
+    ];
+    return suffixes.find(([suffix]) => key.endsWith(suffix))?.[1] || '';
+  }
+
+  function inferredMetric(key) {
+    const known = metricDefinitions[key];
+    if (known) return { key, keys: [key], ...known };
+    return {
+      key, keys: [key], unit: inferredUnit(key), label: humanizeKey(key),
+      description: 'Variable detectada automáticamente en la telemetría recibida'
+    };
+  }
+
   function preset(project = currentProject) {
     return presets[project?.project_type] || presets.generic;
   }
@@ -129,14 +184,27 @@
   }
 
   function activeMetrics(project = currentProject, records = allRecords) {
-    const configured = preset(project).metrics;
-    if (configured.length) return configured;
-    const keys = new Set();
-    records.slice(0, 200).forEach(record => Object.keys(record.metric_values || {}).forEach(key => keys.add(key)));
-    if (records.some(record => numberValue(record.temperature_c) !== null)) keys.add('temperature_c');
-    return [...keys].slice(0, 8).map(key => ({
-      key, keys: [key], unit: '', label: humanizeKey(key), description: 'Variable reportada por el dispositivo'
-    }));
+    const available = new Set();
+    records.forEach(record => {
+      directMetricKeys.forEach(key => { if (numberValue(record?.[key]) !== null) available.add(key); });
+      Object.entries(record?.metric_values || {}).forEach(([key, value]) => {
+        if (numberValue(value) !== null) available.add(key);
+      });
+    });
+
+    const metrics = [];
+    const represented = new Set();
+    preset(project).metrics.forEach(metric => {
+      if (!metric.keys.some(key => available.has(key))) return;
+      metrics.push(metric);
+      metric.keys.forEach(key => represented.add(key));
+    });
+    [...available].sort((a, b) => a.localeCompare(b, 'es')).forEach(key => {
+      if (represented.has(key)) return;
+      metrics.push(inferredMetric(key));
+      represented.add(key);
+    });
+    return metrics;
   }
 
   const normalizedStatus = record => String(record?.status || 'SIN_DATO').trim().toUpperCase();
@@ -183,10 +251,10 @@
       }
       const metrics = activeMetrics(project, [record]);
       const temperature = metricValue(record, metrics.find(metric => metric.key === 'temperature_c') || { keys: [] });
-      const input = numberValue(record.input_voltage);
-      const output = numberValue(record.output_voltage);
-      const battery = numberValue(record.battery_voltage);
-      const load = numberValue(record.load_percent);
+      const input = metricValue(record, { keys: ['input_voltage'] });
+      const output = metricValue(record, { keys: ['output_voltage'] });
+      const battery = metricValue(record, { keys: ['battery_voltage'] });
+      const load = metricValue(record, { keys: ['load_percent'] });
       if (input !== null && (input < rules.inputMin || input > rules.inputMax)) push('input-voltage', 'critical', 'Voltaje de entrada fuera de rango', `Lectura: ${formatMetric(input, 'V')}.`);
       if (output !== null && (output < rules.outputMin || output > rules.outputMax)) push('output-voltage', 'critical', 'Voltaje de salida fuera de rango', `Lectura: ${formatMetric(output, 'V')}.`);
       if (battery !== null && battery < rules.batteryMin) push('battery-voltage', 'critical', 'Batería baja', `Lectura: ${formatMetric(battery, 'V')}.`);
