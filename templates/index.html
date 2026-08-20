@@ -389,6 +389,17 @@
     .device-catalog-item strong { display: block; color: var(--brand-blue-deep); }
     .device-catalog-item span { color: var(--muted); font-size: 13px; }
     .project-description { margin-top: 18px; padding: 16px; border: 1px solid #cde3ed; border-radius: 12px; color: #345b72; background: #f5fbfe; line-height: 1.55; }
+    .admin-form-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 20px; }
+    .compact-grid { margin-top: 0; }
+    .admin-catalog { display: grid; gap: 13px; padding: 18px; }
+    .admin-company-card { padding: 18px; border: 1px solid #d6e7ef; border-radius: 13px; background: #fbfdfe; }
+    .admin-company-card h4 { margin: 0 0 5px; color: var(--brand-blue-deep); font-size: 18px; }
+    .admin-company-card > p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .admin-company-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .admin-company-meta span { padding: 6px 9px; border-radius: 8px; color: #345b72; background: #edf7fb; font-size: 12px; font-weight: 700; }
+    .admin-project-list { display: grid; gap: 8px; margin-top: 13px; }
+    .admin-project-item { padding: 10px 12px; border-left: 4px solid var(--brand-orange); border-radius: 7px; color: #345b72; background: #fff6ed; }
+    .admin-project-item strong { color: var(--brand-blue-deep); }
 
     @media (max-width: 980px) {
       .auth-view { grid-template-columns: 1fr; }
@@ -411,6 +422,7 @@
       .charts-grid { grid-template-columns: 1fr; }
       .chart-card:first-child { grid-column: auto; }
       .management-grid { grid-template-columns: 1fr; }
+      .admin-form-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
@@ -539,24 +551,13 @@
       </div>
     </section>
 
-    <section id="onboarding" class="onboarding-view hidden">
-      <section class="onboarding-card" aria-labelledby="onboarding-title">
-        <span class="page-kicker">Primera configuración</span>
-        <h2 id="onboarding-title">Preparemos tu espacio de monitoreo</h2>
-        <p class="onboarding-intro">Esta información se solicita una sola vez. Crearemos un espacio privado para tu empresa y una interfaz adaptada al tipo de proyecto.</p>
-        <form id="onboarding-form">
-          <div class="form-grid">
-            <div class="plain-field"><label for="onboarding-name">Tu nombre</label><input id="onboarding-name" required minlength="2" maxlength="100" autocomplete="name" placeholder="Nombre del responsable"></div>
-            <div class="plain-field"><label for="onboarding-company">Empresa u organización</label><input id="onboarding-company" required minlength="2" maxlength="120" autocomplete="organization" placeholder="Ej. WiMobile"></div>
-            <div class="plain-field wide"><label for="onboarding-description">¿A qué se dedica tu empresa y qué deseas monitorear?</label><textarea id="onboarding-description" required minlength="10" maxlength="1000" placeholder="Describe brevemente la actividad y el objetivo del monitoreo"></textarea></div>
-            <div class="plain-field"><label for="onboarding-project">Nombre del proyecto</label><input id="onboarding-project" required minlength="2" maxlength="120" placeholder="Ej. Acuarios planta norte"></div>
-            <div class="plain-field"><label for="onboarding-type">Tipo de monitoreo</label><select id="onboarding-type" required><option value="ups">UPS y energía</option><option value="agriculture">Cosechas y agricultura</option><option value="aquarium">Temperatura de acuarios</option><option value="generic">Otro proyecto IoT</option></select></div>
-            <div class="plain-field"><label for="onboarding-device">ID del primer dispositivo (opcional)</label><input id="onboarding-device" maxlength="80" placeholder="Ej. MUPS-01436666"><span class="field-help">Debe coincidir exactamente con el ID que envía el equipo.</span></div>
-            <div class="plain-field"><label for="onboarding-code">Código de vinculación (opcional)</label><input id="onboarding-code" maxlength="120" autocomplete="off" placeholder="Código entregado con el equipo"><span class="field-help">Evita que otra cuenta reclame tu dispositivo.</span></div>
-          </div>
-          <div class="onboarding-actions"><button id="onboarding-button" class="primary-button" type="submit">Crear mi espacio privado</button><button id="onboarding-logout" class="reset-button" type="button">Cerrar sesión</button></div>
-          <div id="onboarding-message" class="onboarding-message" role="status" aria-live="polite"></div>
-        </form>
+    <section id="pending-access" class="onboarding-view hidden">
+      <section class="onboarding-card" aria-labelledby="pending-title">
+        <span class="page-kicker">Acceso en preparación</span>
+        <h2 id="pending-title">Tu espacio todavía no ha sido configurado</h2>
+        <p class="onboarding-intro">Tu cuenta funciona correctamente, pero el administrador general aún debe registrar tu empresa, crear el proyecto y asignar sus dispositivos. Cuando termine, podrás iniciar sesión y consultar únicamente la información autorizada.</p>
+        <div class="project-description"><strong>No necesitas llenar ningún cuestionario.</strong><br>Comunícate con el responsable de la plataforma para solicitar la activación de tu entorno.</div>
+        <div class="onboarding-actions"><button id="pending-logout" class="reset-button" type="button">Cerrar sesión</button></div>
       </section>
     </section>
 
@@ -574,7 +575,11 @@
           </button>
           <button class="nav-button" type="button" data-panel="devices-panel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9h8M8 13h5"/></svg>
-            <span>Mis dispositivos</span>
+            <span>Dispositivos</span>
+          </button>
+          <button id="admin-nav" class="nav-button hidden" type="button" data-panel="admin-panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V7l-8-4Z"/><path d="M9 12h6M12 9v6"/></svg>
+            <span>Administración</span>
           </button>
           <p class="sidebar-note"><strong id="sidebar-project-name">Proyecto IoT</strong><span id="sidebar-project-description">Tus equipos y lecturas están separados de los demás usuarios.</span></p>
         </aside>
@@ -703,26 +708,69 @@
 
           <section id="devices-panel" class="dashboard-panel hidden">
             <div class="page-heading">
-              <div><span class="page-kicker">Configuración segura</span><h2>Mis dispositivos</h2><p>Vincula únicamente equipos que pertenecen a este proyecto.</p></div>
+              <div><span class="page-kicker">Inventario autorizado</span><h2>Dispositivos del proyecto</h2><p>Consulta los equipos que el administrador general asignó a este entorno.</p></div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
             </div>
-            <div class="management-grid">
+            <section class="section-card">
+              <div class="toolbar"><div><h3>Equipos disponibles</h3><span id="device-catalog-meta" class="muted">Cargando…</span></div><span class="muted">Solo el administrador general puede agregar, retirar o modificar dispositivos.</span></div>
+              <div id="device-catalog" class="device-catalog"><div class="empty">Todavía no hay dispositivos asignados.</div></div>
+            </section>
+            <div id="workspace-description" class="project-description"></div>
+          </section>
+
+          <section id="admin-panel" class="dashboard-panel hidden">
+            <div class="page-heading">
+              <div><span class="page-kicker">Control centralizado</span><h2>Administración general</h2><p>Crea cuentas, prepara entornos y controla qué dispositivos puede ver cada empresa.</p></div>
+              <button id="admin-refresh" class="app-button secondary" type="button">Actualizar administración</button>
+            </div>
+
+            <div class="cards">
+              <article class="card brand-blue"><span class="label">Empresas</span><span id="admin-company-count" class="value">0</span><span class="card-note">Entornos registrados</span></article>
+              <article class="card"><span class="label">Usuarios asignados</span><span id="admin-user-count" class="value">0</span><span class="card-note">Cuentas con acceso empresarial</span></article>
+              <article class="card brand-orange"><span class="label">Proyectos</span><span id="admin-project-count" class="value">0</span><span class="card-note">Espacios de monitoreo</span></article>
+              <article class="card"><span class="label">Dispositivos</span><span id="admin-device-count" class="value">0</span><span class="card-note">Equipos registrados</span></article>
+            </div>
+
+            <div class="admin-form-grid section-stack">
               <section class="section-card">
-                <div class="toolbar"><div><h3>Agregar dispositivo</h3><span class="muted">Necesitas el ID y código de vinculación entregados con el equipo.</span></div></div>
-                <form id="claim-device-form" class="management-form">
-                  <div class="plain-field"><label for="claim-device-id">ID del dispositivo</label><input id="claim-device-id" required maxlength="80" placeholder="Ej. MUPS-01436666"></div>
-                  <div class="plain-field"><label for="claim-display-name">Nombre visible (opcional)</label><input id="claim-display-name" maxlength="120" placeholder="Ej. UPS oficina principal"></div>
-                  <div class="plain-field"><label for="claim-code">Código de vinculación</label><input id="claim-code" required minlength="8" maxlength="120" autocomplete="off" placeholder="Código privado del equipo"></div>
-                  <button id="claim-device-button" class="app-button" type="submit">Vincular dispositivo</button>
-                  <div id="claim-device-message" class="management-message" role="status" aria-live="polite"></div>
+                <div class="toolbar"><div><h3>Nueva empresa y cuenta</h3><span class="muted">Este formulario sustituye el cuestionario que antes llenaba el cliente.</span></div></div>
+                <form id="admin-workspace-form" class="management-form">
+                  <div class="form-grid compact-grid">
+                    <div class="plain-field"><label for="admin-user-name">Nombre del responsable</label><input id="admin-user-name" required minlength="2" maxlength="100" placeholder="Ej. Laura Méndez"></div>
+                    <div class="plain-field"><label for="admin-user-email">Correo para iniciar sesión</label><input id="admin-user-email" type="email" required maxlength="254" autocomplete="off" placeholder="responsable@empresa.com"></div>
+                    <div class="plain-field"><label for="admin-user-password">Contraseña temporal</label><input id="admin-user-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Déjala vacía si la cuenta ya existe"><span class="field-help">Si escribes una contraseña, la plataforma creará la cuenta. Compártela con la empresa por un medio seguro.</span></div>
+                    <div class="plain-field"><label for="admin-company-name">Empresa u organización</label><input id="admin-company-name" required minlength="2" maxlength="120" placeholder="Ej. AquaVida Sistemas"></div>
+                    <div class="plain-field wide"><label for="admin-company-description">Actividad y objetivo del monitoreo</label><textarea id="admin-company-description" required minlength="10" maxlength="1000" placeholder="Describe la empresa y lo que necesita monitorear"></textarea></div>
+                    <div class="plain-field"><label for="admin-project-name">Nombre del proyecto</label><input id="admin-project-name" required minlength="2" maxlength="120" placeholder="Ej. Acuario principal"></div>
+                    <div class="plain-field"><label for="admin-project-type">Tipo de monitoreo</label><select id="admin-project-type" required><option value="ups">UPS y energía</option><option value="agriculture">Cosechas y agricultura</option><option value="aquarium">Temperatura de acuarios</option><option value="generic">Otro proyecto IoT</option></select></div>
+                  </div>
+                  <button id="admin-workspace-button" class="app-button" type="submit">Crear cuenta y entorno</button>
+                  <div id="admin-workspace-message" class="management-message" role="status" aria-live="polite"></div>
                 </form>
               </section>
+
               <section class="section-card">
-                <div class="toolbar"><div><h3>Equipos vinculados</h3><span id="device-catalog-meta" class="muted">Cargando…</span></div></div>
-                <div id="device-catalog" class="device-catalog"><div class="empty">Todavía no hay dispositivos vinculados.</div></div>
+                <div class="toolbar"><div><h3>Asignar dispositivo</h3><span class="muted">El ID debe coincidir exactamente con el que transmite el equipo.</span></div></div>
+                <form id="admin-device-form" class="management-form">
+                  <div class="plain-field"><label for="admin-device-project">Empresa y proyecto</label><select id="admin-device-project" required><option value="">Selecciona un proyecto</option></select></div>
+                  <div class="plain-field"><label for="admin-device-id">ID transmitido por el dispositivo</label><input id="admin-device-id" required maxlength="80" placeholder="Ej. MUPS-01436666"></div>
+                  <div class="plain-field"><label for="admin-device-name">Nombre visible</label><input id="admin-device-name" required maxlength="120" placeholder="Ej. UPS oficina principal"></div>
+                  <div class="plain-field"><label for="admin-device-type">Tipo de dispositivo</label><select id="admin-device-type"><option value="ups">UPS</option><option value="agriculture">Sensor agrícola</option><option value="aquarium">Sensor de acuario</option><option value="generic">Dispositivo IoT</option></select></div>
+                  <button id="admin-device-button" class="app-button" type="submit">Guardar y asignar dispositivo</button>
+                  <div id="admin-device-message" class="management-message" role="status" aria-live="polite"></div>
+                </form>
               </section>
             </div>
-            <div id="workspace-description" class="project-description"></div>
+
+            <section class="section-card section-stack">
+              <div class="toolbar"><div><h3>Empresas y proyectos registrados</h3><span class="muted">Vista general de los accesos creados por el jefe.</span></div></div>
+              <div id="admin-company-catalog" class="admin-catalog"><div class="empty">Cargando empresas…</div></div>
+            </section>
+
+            <section class="section-card section-stack">
+              <div class="toolbar"><div><h3>Inventario general de dispositivos</h3><span class="muted">Puedes retirar un equipo de su empresa sin eliminar sus registros de la base.</span></div></div>
+              <div id="admin-device-catalog" class="device-catalog"><div class="empty">Cargando dispositivos…</div></div>
+            </section>
           </section>
         </div>
       </div>
