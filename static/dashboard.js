@@ -23,7 +23,8 @@
     adminProjectSelect: $('#admin-device-project'), adminCompanyCatalog: $('#admin-company-catalog'),
     adminDeviceCatalog: $('#admin-device-catalog'), adminPriority: $('#admin-priority'),
     adminNotificationList: $('#admin-notification-list'), adminCompanySwitcher: $('#admin-company-switcher'),
-    adminCompanyChips: $('#admin-company-chips'), adminDetailContext: $('#admin-detail-context'),
+    adminCompanyChips: $('#admin-company-chips'), adminCompanySelect: $('#admin-company-select'),
+    adminDetailContext: $('#admin-detail-context'),
     adminInventorySwitcher: $('#admin-inventory-switcher'), adminInventoryProject: $('#admin-inventory-project')
   };
 
@@ -486,18 +487,24 @@
   function renderAdminCompanyChips(entries) {
     const companies = new Map();
     (workspace.projects || []).forEach(project => {
-      if (!companies.has(project.organization_id)) companies.set(project.organization_id, project.organization_name);
+      if (!companies.has(project.organization_id)) companies.set(project.organization_id, { name: project.organization_name, projects: [] });
+      companies.get(project.organization_id).projects.push(project);
     });
     if (adminCompanyFilter !== 'all' && !companies.has(adminCompanyFilter)) adminCompanyFilter = 'all';
-    const totalDevices = entries.length;
-    elements.adminCompanyChips.innerHTML = [
-      `<button class="company-chip${adminCompanyFilter === 'all' ? ' active' : ''}" type="button" data-company-filter="all">Todas (${totalDevices})</button>`,
-      ...[...companies.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es')).map(([id, name]) => {
+    const sortedCompanies = [...companies.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name, 'es'));
+    elements.adminCompanySelect.innerHTML = '<option value="all">Todas las empresas</option>' + sortedCompanies.map(([id, company]) =>
+      `<option value="${esc(id)}">${esc(company.name)}</option>`
+    ).join('');
+    elements.adminCompanySelect.value = adminCompanyFilter;
+    elements.adminCompanyChips.innerHTML = sortedCompanies.map(([id, company]) => {
         const count = entries.filter(entry => entry.project.organization_id === id).length;
-        return `<button class="company-chip${adminCompanyFilter === id ? ' active' : ''}" type="button" data-company-filter="${esc(id)}">${esc(name)} (${count})</button>`;
-      })
-    ].join('');
-    const selectedName = adminCompanyFilter === 'all' ? 'Todas las empresas' : companies.get(adminCompanyFilter);
+        const projectCount = company.projects.length;
+        return `<button class="company-chip${adminCompanyFilter === id ? ' active' : ''}" type="button" data-company-filter="${esc(id)}">
+          <span class="company-chip-icon" aria-hidden="true">▦</span>
+          <span><strong>${esc(company.name)}</strong><span>${projectCount} proyecto${projectCount === 1 ? '' : 's'} · ${count} dispositivo${count === 1 ? '' : 's'}</span></span>
+        </button>`;
+      }).join('');
+    const selectedName = adminCompanyFilter === 'all' ? 'Todas las empresas' : companies.get(adminCompanyFilter)?.name;
     $('#admin-company-filter-label').textContent = `Vista: ${selectedName}`;
   }
 
@@ -526,6 +533,8 @@
     $('#summary-card-3-label').textContent = 'Alertas activas';
     $('#summary-card-3-note').textContent = 'Equipos que requieren revisión';
     $('#summary-card-4-label').textContent = 'Requieren mantenimiento';
+    $('#summary-card-2').classList.add('admin-device-card');
+    $('#summary-card-4').classList.add('admin-maintenance-card');
     $('#device-count').textContent = companies.size;
     $('#online-count').textContent = entries.length;
     $('#offline-count').textContent = alertEntries.length;
@@ -536,19 +545,28 @@
     const filtered = adminCompanyFilter === 'all'
       ? entries
       : entries.filter(entry => entry.project.organization_id === adminCompanyFilter);
+    const selectedCompanyName = adminCompanyFilter === 'all'
+      ? ''
+      : workspace.projects.find(project => project.organization_id === adminCompanyFilter)?.organization_name || '';
+    $('#overview-table-title').textContent = adminCompanyFilter === 'all'
+      ? 'Equipos de todas las empresas'
+      : `Equipos de ${selectedCompanyName}`;
     const priority = filtered.filter(entry => entry.alerts.length).sort((a, b) => {
       const severity = entry => primaryAlert(entry.alerts)?.severity === 'critical' ? 0 : 1;
       return severity(a) - severity(b) || validTime(a.latest) - validTime(b.latest);
     });
     $('#admin-priority-meta').textContent = priority.length ? `${priority.length} equipo${priority.length === 1 ? '' : 's'} por revisar` : 'Sin incidentes activos';
     $('#admin-priority-meta').className = `pill${priority.length ? ' warning' : ''}`;
-    elements.adminNotificationList.innerHTML = priority.length ? priority.slice(0, 8).map(entry => {
+    elements.adminNotificationList.innerHTML = priority.length ? `<div class="admin-notification-header"><span></span><span>Empresa</span><span>Dispositivo</span><span>Problema</span><span>Tiempo</span><span>Estado</span></div>` + priority.slice(0, 8).map(entry => {
       const alert = primaryAlert(entry.alerts);
+      const requiresMaintenance = entry.connection.connected && entry.maintenanceAlerts.length;
       return `<article class="admin-notification${alert.severity === 'critical' ? ' critical' : ''}">
         <span class="admin-priority-icon">!</span>
-        <div><span class="company">${esc(entry.project.organization_name)}</span><span class="device">${esc(entry.device.display_name || entry.device.device_id)} · ${esc(entry.project.name)}</span></div>
+        <div><span class="company">${esc(entry.project.organization_name)}</span><span class="device">${esc(entry.project.name)}</span></div>
+        <div class="device"><strong>${esc(entry.device.display_name || entry.device.device_id)}</strong><span>${esc(entry.device.device_id)}</span></div>
         <div class="problem"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
-        <time>${entry.latest ? esc(formatTime(entry.latest.received_at)) : 'Sin primera lectura'}<br>${entry.connection.connected ? 'Reporte reciente' : 'Atención pendiente'}</time>
+        <time>${entry.latest ? `Hace ${esc(formatDuration(entry.connection.ageMs))}` : 'Sin lecturas'}</time>
+        <div class="notification-state"><span class="pill${requiresMaintenance ? ' warning' : ' offline'}">${requiresMaintenance ? 'Mantenimiento recomendado' : 'Requiere revisión'}</span></div>
       </article>`;
     }).join('') : '<div class="admin-notification-empty"><span>✓</span>No hay incidentes activos en la vista seleccionada.</div>';
 
@@ -597,6 +615,8 @@
     $('#summary-card-3-label').textContent = 'Sin comunicación';
     $('#summary-card-3-note').textContent = 'Más de 30 segundos sin reportar datos';
     $('#summary-card-4-label').textContent = 'Alertas activas';
+    $('#summary-card-2').classList.remove('admin-device-card');
+    $('#summary-card-4').classList.remove('admin-maintenance-card');
     const items = latestDevices();
     const metrics = activeMetrics();
     const now = Date.now();
@@ -987,6 +1007,10 @@
     const trigger = event.target.closest('[data-company-filter]');
     if (!trigger) return;
     adminCompanyFilter = trigger.dataset.companyFilter;
+    renderAdminOverview();
+  });
+  elements.adminCompanySelect.addEventListener('change', () => {
+    adminCompanyFilter = elements.adminCompanySelect.value;
     renderAdminOverview();
   });
   elements.deviceSelect.addEventListener('change', renderDeviceDetail);
