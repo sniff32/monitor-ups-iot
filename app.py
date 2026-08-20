@@ -51,8 +51,8 @@ def parse_metric_values(value: object) -> dict[str, float]:
         return {}
     if not isinstance(value, dict):
         raise ValueError("metrics debe ser un objeto JSON")
-    if len(value) > 32:
-        raise ValueError("metrics admite como máximo 32 variables")
+    if len(value) > 128:
+        raise ValueError("metrics admite como máximo 128 variables")
 
     metrics: dict[str, float] = {}
     for raw_key, raw_value in value.items():
@@ -61,6 +61,36 @@ def parse_metric_values(value: object) -> dict[str, float]:
             raise ValueError(f"Nombre de métrica no válido: {raw_key}")
         metrics[key] = parse_decimal(raw_value, f"metrics.{key}", "-1000000000", "1000000000")
     return metrics
+
+
+RESERVED_PAYLOAD_FIELDS = {
+    "device_id", "sequence", "status", "raw_payload", "metrics",
+    "input_voltage", "output_voltage", "battery_voltage", "load_percent",
+    "temperature", "temperature_c", "source_sequence", "project_id",
+}
+
+
+def collect_dynamic_metrics(payload: dict, metrics: dict[str, float]) -> dict[str, float]:
+    """Conserva cualquier campo numérico adicional sin depender del tipo de proyecto."""
+    collected = dict(metrics)
+    for raw_key, raw_value in payload.items():
+        key = str(raw_key).strip().lower()
+        if key in RESERVED_PAYLOAD_FIELDS or key in collected:
+            continue
+        if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", key):
+            continue
+        if isinstance(raw_value, (dict, list, tuple, bool)) or raw_value in (None, ""):
+            continue
+        try:
+            collected[key] = parse_decimal(
+                raw_value, key, "-1000000000", "1000000000"
+            )
+        except ValueError:
+            # Los metadatos textuales desconocidos no son mediciones graficables.
+            continue
+        if len(collected) > 128:
+            raise ValueError("la telemetría admite como máximo 128 variables numéricas")
+    return collected
 
 
 def parse_telemetry(payload: dict) -> dict:
@@ -79,7 +109,9 @@ def parse_telemetry(payload: dict) -> dict:
     if sequence < 0 or sequence > 9_223_372_036_854_775_807:
         raise ValueError("sequence está fuera del rango permitido")
 
-    metric_values = parse_metric_values(payload.get("metrics"))
+    metric_values = collect_dynamic_metrics(
+        payload, parse_metric_values(payload.get("metrics"))
+    )
     record: dict = {
         "received_at": datetime.now(timezone.utc).isoformat(),
         "device_id": device_id,
@@ -99,13 +131,19 @@ def parse_telemetry(payload: dict) -> dict:
     # El protocolo UPS existente conserva sus cuatro campos obligatorios. Los
     # proyectos genéricos pueden enviar solamente el objeto "metrics".
     for field, (minimum, maximum) in ups_fields.items():
-        if field in payload or not metric_values:
+        if field in payload:
+            record[field] = parse_decimal(payload.get(field), field, minimum, maximum)
+        elif field in metric_values:
+            record[field] = parse_decimal(metric_values[field], field, minimum, maximum)
+        elif not metric_values:
             record[field] = parse_decimal(payload.get(field), field, minimum, maximum)
 
     # La temperatura es opcional para conservar compatibilidad con los equipos
     # actuales. Solo se envía a Supabase cuando el dispositivo la incluye.
-    if "temperature_c" in payload or "temperature" in payload:
-        temperature = payload.get("temperature_c", payload.get("temperature"))
+    if "temperature_c" in payload or "temperature" in payload or "temperature_c" in metric_values:
+        temperature = payload.get(
+            "temperature_c", payload.get("temperature", metric_values.get("temperature_c"))
+        )
         record["temperature_c"] = parse_optional_decimal(
             temperature, "temperature_c", "-50", "150"
         )
