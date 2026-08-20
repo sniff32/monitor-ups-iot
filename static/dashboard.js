@@ -9,16 +9,19 @@
   })[character]);
 
   const elements = {
-    login: $('#login'), onboarding: $('#onboarding'), dashboard: $('#dashboard'), logout: $('#logout'),
+    login: $('#login'), pending: $('#pending-access'), dashboard: $('#dashboard'), logout: $('#logout'),
     loginForm: $('#login-form'), loginMessage: $('#login-message'), loginButton: $('#login-button'),
     password: $('#password'), passwordToggle: $('#toggle-password'),
-    onboardingForm: $('#onboarding-form'), onboardingMessage: $('#onboarding-message'),
-    onboardingButton: $('#onboarding-button'), projectSelect: $('#project-select'),
+    projectSelect: $('#project-select'), adminNav: $('#admin-nav'),
     deviceRows: $('#device-rows'), deviceTableHead: $('#device-table-head'),
     historyRows: $('#history-rows'), historyTableHead: $('#history-table-head'),
     deviceSelect: $('#device-select'), rangeSelect: $('#range-select'), chartsGrid: $('#charts-grid'),
-    claimForm: $('#claim-device-form'), claimMessage: $('#claim-device-message'),
-    claimButton: $('#claim-device-button'), deviceCatalog: $('#device-catalog')
+    deviceCatalog: $('#device-catalog'),
+    adminWorkspaceForm: $('#admin-workspace-form'), adminWorkspaceButton: $('#admin-workspace-button'),
+    adminWorkspaceMessage: $('#admin-workspace-message'), adminDeviceForm: $('#admin-device-form'),
+    adminDeviceButton: $('#admin-device-button'), adminDeviceMessage: $('#admin-device-message'),
+    adminProjectSelect: $('#admin-device-project'), adminCompanyCatalog: $('#admin-company-catalog'),
+    adminDeviceCatalog: $('#admin-device-catalog')
   };
 
   const rules = {
@@ -76,6 +79,7 @@
   let loadingRecords = false;
   let realtimeChannel = null;
   let bootToken = 0;
+  let adminCatalog = { organizations: [], projects: [], members: [], devices: [] };
 
   const numberValue = value => {
     if (value === null || value === undefined || value === '') return null;
@@ -236,7 +240,7 @@
 
   function showView(view) {
     elements.login.classList.toggle('hidden', view !== 'login');
-    elements.onboarding.classList.toggle('hidden', view !== 'onboarding');
+    elements.pending.classList.toggle('hidden', view !== 'pending');
     elements.dashboard.classList.toggle('hidden', view !== 'dashboard');
     elements.logout.classList.toggle('hidden', view !== 'dashboard');
     document.body.classList.toggle('session-active', view === 'dashboard');
@@ -247,6 +251,7 @@
     document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.panel === panelId));
     if (panelId === 'device-panel') renderDeviceDetail();
     if (panelId === 'devices-panel') renderDeviceCatalog();
+    if (panelId === 'admin-panel' && workspace.is_platform_admin) loadAdminCatalog();
   }
 
   function setServerState(connected, text) {
@@ -316,6 +321,84 @@
         <div><strong>${esc(device.display_name || device.device_id)}</strong><span>ID técnico: ${esc(device.device_id)} · tipo: ${esc(device.device_type)}</span></div>
         <button class="app-button secondary row-action" type="button" data-open-device="${esc(device.device_id)}">Ver lecturas</button>
       </article>`).join('') : '<div class="empty">Todavía no hay dispositivos vinculados a este proyecto.</div>';
+  }
+
+  function renderAdminCatalog() {
+    const organizations = Array.isArray(adminCatalog.organizations) ? adminCatalog.organizations : [];
+    const projects = Array.isArray(adminCatalog.projects) ? adminCatalog.projects : [];
+    const members = Array.isArray(adminCatalog.members) ? adminCatalog.members : [];
+    const devices = Array.isArray(adminCatalog.devices) ? adminCatalog.devices : [];
+
+    $('#admin-company-count').textContent = organizations.length;
+    $('#admin-user-count').textContent = members.length;
+    $('#admin-project-count').textContent = projects.length;
+    $('#admin-device-count').textContent = devices.length;
+
+    elements.adminProjectSelect.innerHTML = '<option value="">Selecciona un proyecto</option>' + projects.map(project =>
+      `<option value="${esc(project.id)}">${esc(project.organization_name)} · ${esc(project.name)}</option>`
+    ).join('');
+
+    elements.adminCompanyCatalog.innerHTML = organizations.length ? organizations.map(organization => {
+      const companyMembers = members.filter(member => member.organization_id === organization.id);
+      const companyProjects = projects.filter(project => project.organization_id === organization.id);
+      return `<article class="admin-company-card">
+        <h4>${esc(organization.name)}</h4>
+        <p>${esc(organization.business_description || 'Sin descripción registrada.')}</p>
+        <div class="admin-company-meta">
+          <span>${companyMembers.length} usuario${companyMembers.length === 1 ? '' : 's'}</span>
+          <span>${companyProjects.length} proyecto${companyProjects.length === 1 ? '' : 's'}</span>
+          ${companyMembers.map(member => `<span>${esc(member.display_name || member.email)} · ${esc(member.email)}</span>`).join('')}
+        </div>
+        <div class="admin-project-list">${companyProjects.map(project => {
+          const count = devices.filter(device => device.project_id === project.id).length;
+          return `<div class="admin-project-item"><strong>${esc(project.name)}</strong> · ${esc(project.project_type)} · ${count} dispositivo${count === 1 ? '' : 's'}</div>`;
+        }).join('') || '<div class="empty">Esta empresa todavía no tiene proyectos.</div>'}</div>
+      </article>`;
+    }).join('') : '<div class="empty">Todavía no existen empresas registradas.</div>';
+
+    elements.adminDeviceCatalog.innerHTML = devices.length ? devices.map(device => `
+      <article class="device-catalog-item">
+        <div><strong>${esc(device.display_name || device.device_id)}</strong><span>ID: ${esc(device.device_id)} · ${device.project_id ? `${esc(device.organization_name)} / ${esc(device.project_name)}` : 'Sin empresa asignada'}</span></div>
+        ${device.project_id ? `<button class="app-button secondary row-action" type="button" data-admin-unassign="${esc(device.device_id)}">Retirar</button>` : '<span class="pill neutral">Disponible</span>'}
+      </article>`).join('') : '<div class="empty">Todavía no existen dispositivos registrados.</div>';
+  }
+
+  async function loadAdminCatalog() {
+    if (!workspace.is_platform_admin) return;
+    const { data, error } = await client.rpc('admin_get_catalog');
+    if (error) {
+      elements.adminCompanyCatalog.innerHTML = `<div class="empty">No fue posible cargar la administración: ${esc(error.message)}</div>`;
+      return;
+    }
+    adminCatalog = data || { organizations: [], projects: [], members: [], devices: [] };
+    renderAdminCatalog();
+  }
+
+  async function refreshWorkspace(preferredProjectId = currentProject?.id) {
+    workspace = await loadWorkspace();
+    elements.adminNav.classList.toggle('hidden', !workspace.is_platform_admin);
+    if (!workspace.projects?.length) {
+      currentProject = null;
+      return;
+    }
+    const selected = workspace.projects.some(project => project.id === preferredProjectId)
+      ? preferredProjectId
+      : workspace.projects[0].id;
+    await activateProject(selected);
+  }
+
+  async function createCompanyAccount(email, password, displayName) {
+    const { data: sessionData } = await client.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) throw new Error('La sesión del administrador terminó. Inicia sesión nuevamente.');
+    const response = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, display_name: displayName })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'No fue posible crear la cuenta de acceso.');
+    return result;
   }
 
   function renderOverview() {
@@ -481,7 +564,18 @@
 
   async function activateProject(projectId) {
     currentProject = workspace.projects.find(project => project.id === projectId) || workspace.projects[0] || null;
-    if (!currentProject) { showView('onboarding'); return; }
+    if (!currentProject) {
+      if (workspace.is_platform_admin) {
+        $('#header-project-title').textContent = 'Administración general';
+        $('#header-company-name').textContent = 'Control centralizado de empresas y dispositivos';
+        elements.projectSelect.classList.add('hidden');
+        showView('dashboard');
+        showPanel('admin-panel');
+      } else {
+        showView('pending');
+      }
+      return;
+    }
     localStorage.setItem('monitor-current-project', currentProject.id);
     allRecords = [];
     renderProjectSelector(); applyProjectPreset(); renderDeviceCatalog(); renderOverview(); subscribeToProject();
@@ -493,14 +587,17 @@
     const token = ++bootToken;
     if (!session) {
       workspace = { profile: {}, projects: [] }; currentProject = null; allRecords = [];
+      elements.adminNav.classList.add('hidden');
       showView('login'); return;
     }
     try {
       workspace = await loadWorkspace();
       if (token !== bootToken) return;
-      if (!workspace.profile?.onboarding_completed || !workspace.projects?.length) {
-        $('#onboarding-name').value = workspace.profile?.display_name || '';
-        showView('onboarding'); return;
+      elements.adminNav.classList.toggle('hidden', !workspace.is_platform_admin);
+      if (!workspace.projects?.length) {
+        if (workspace.is_platform_admin) await activateProject(null);
+        else showView('pending');
+        return;
       }
       const remembered = localStorage.getItem('monitor-current-project');
       await activateProject(workspace.projects.some(project => project.id === remembered) ? remembered : workspace.projects[0].id);
@@ -533,58 +630,90 @@
     elements.passwordToggle.setAttribute('title', showing ? 'Mostrar contraseña' : 'Ocultar contraseña');
   });
 
-  elements.onboardingForm.addEventListener('submit', async event => {
+  elements.adminWorkspaceForm.addEventListener('submit', async event => {
     event.preventDefault();
-    elements.onboardingButton.disabled = true; elements.onboardingMessage.textContent = 'Creando tu espacio privado…';
-    const payload = {
-      p_display_name: $('#onboarding-name').value.trim(), p_company_name: $('#onboarding-company').value.trim(),
-      p_business_description: $('#onboarding-description').value.trim(), p_project_name: $('#onboarding-project').value.trim(),
-      p_project_type: $('#onboarding-type').value
-    };
-    const { data, error } = await client.rpc('complete_onboarding', payload);
-    if (error) {
-      elements.onboardingMessage.textContent = `No fue posible crear el espacio: ${error.message}`;
-      elements.onboardingButton.disabled = false; return;
-    }
-    workspace = data;
-    let claimError = null;
-    const deviceId = $('#onboarding-device').value.trim(), claimCode = $('#onboarding-code').value.trim();
-    if (deviceId || claimCode) {
-      if (!deviceId || !claimCode) claimError = 'Para vincular el equipo debes escribir tanto el ID como el código.';
-      else {
-        const result = await client.rpc('claim_device', { p_project_id: workspace.projects[0].id, p_device_id: deviceId, p_claim_code: claimCode, p_display_name: '' });
-        if (result.error) claimError = result.error.message; else workspace = result.data;
+    elements.adminWorkspaceButton.disabled = true;
+    elements.adminWorkspaceMessage.textContent = 'Preparando la cuenta y el entorno…';
+    const email = $('#admin-user-email').value.trim();
+    const password = $('#admin-user-password').value;
+    const displayName = $('#admin-user-name').value.trim();
+    let accountCreated = false;
+    try {
+      if (password) {
+        await createCompanyAccount(email, password, displayName);
+        accountCreated = true;
       }
+      const { error } = await client.rpc('admin_create_workspace', {
+        p_user_email: email,
+        p_display_name: displayName,
+        p_company_name: $('#admin-company-name').value.trim(),
+        p_business_description: $('#admin-company-description').value.trim(),
+        p_project_name: $('#admin-project-name').value.trim(),
+        p_project_type: $('#admin-project-type').value
+      });
+      if (error) throw new Error(error.message);
+      elements.adminWorkspaceForm.reset();
+      elements.adminWorkspaceMessage.textContent = 'Empresa, usuario y proyecto creados correctamente.';
+      await refreshWorkspace();
+      showPanel('admin-panel');
+    } catch (error) {
+      elements.adminWorkspaceMessage.textContent = accountCreated
+        ? `La cuenta fue creada, pero faltó preparar su entorno: ${error.message}. Deja la contraseña vacía al reintentar.`
+        : `No fue posible completar el registro: ${error.message}`;
+    } finally {
+      elements.adminWorkspaceButton.disabled = false;
     }
-    elements.onboardingButton.disabled = false;
-    await activateProject(workspace.projects[0].id);
-    if (claimError) { showPanel('devices-panel'); elements.claimMessage.textContent = `El espacio fue creado, pero el dispositivo no se vinculó: ${claimError}`; }
   });
 
-  elements.claimForm.addEventListener('submit', async event => {
+  elements.adminDeviceForm.addEventListener('submit', async event => {
     event.preventDefault();
-    elements.claimButton.disabled = true; elements.claimMessage.textContent = 'Vinculando dispositivo…';
-    const { data, error } = await client.rpc('claim_device', {
-      p_project_id: currentProject.id, p_device_id: $('#claim-device-id').value.trim(),
-      p_claim_code: $('#claim-code').value.trim(), p_display_name: $('#claim-display-name').value.trim()
+    elements.adminDeviceButton.disabled = true;
+    elements.adminDeviceMessage.textContent = 'Guardando la asignación…';
+    const { error } = await client.rpc('admin_assign_device', {
+      p_project_id: elements.adminProjectSelect.value,
+      p_device_id: $('#admin-device-id').value.trim(),
+      p_display_name: $('#admin-device-name').value.trim(),
+      p_device_type: $('#admin-device-type').value
     });
-    elements.claimButton.disabled = false;
-    if (error) { elements.claimMessage.textContent = `No se pudo vincular: ${error.message}`; return; }
-    workspace = data; currentProject = workspace.projects.find(project => project.id === currentProject.id);
-    elements.claimForm.reset(); elements.claimMessage.textContent = 'Dispositivo vinculado correctamente.';
-    renderDeviceCatalog(); await loadRecords(true);
+    elements.adminDeviceButton.disabled = false;
+    if (error) {
+      elements.adminDeviceMessage.textContent = `No fue posible asignar el dispositivo: ${error.message}`;
+      return;
+    }
+    elements.adminDeviceForm.reset();
+    elements.adminDeviceMessage.textContent = 'Dispositivo asignado correctamente.';
+    await refreshWorkspace();
+    showPanel('admin-panel');
   });
 
   document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => showPanel(button.dataset.panel)));
   document.querySelectorAll('[data-show-overview]').forEach(button => button.addEventListener('click', () => showPanel('overview-panel')));
   elements.deviceRows.addEventListener('click', event => { const trigger = event.target.closest('[data-open-device]'); if (trigger) openDevice(trigger.dataset.openDevice); });
   elements.deviceCatalog.addEventListener('click', event => { const trigger = event.target.closest('[data-open-device]'); if (trigger) openDevice(trigger.dataset.openDevice); });
+  elements.adminDeviceCatalog.addEventListener('click', async event => {
+    const trigger = event.target.closest('[data-admin-unassign]');
+    if (!trigger) return;
+    const deviceId = trigger.dataset.adminUnassign;
+    if (!window.confirm(`¿Retirar ${deviceId} de su empresa? Las lecturas anteriores dejarán de ser visibles para el cliente.`)) return;
+    trigger.disabled = true;
+    elements.adminDeviceMessage.textContent = `Retirando ${deviceId}…`;
+    const { error } = await client.rpc('admin_unassign_device', { p_device_id: deviceId });
+    if (error) {
+      elements.adminDeviceMessage.textContent = `No fue posible retirar el dispositivo: ${error.message}`;
+      trigger.disabled = false;
+      return;
+    }
+    elements.adminDeviceMessage.textContent = `${deviceId} fue retirado correctamente.`;
+    await refreshWorkspace();
+    showPanel('admin-panel');
+  });
   elements.deviceSelect.addEventListener('change', renderDeviceDetail);
   elements.rangeSelect.addEventListener('change', renderDeviceDetail);
   elements.projectSelect.addEventListener('change', () => activateProject(elements.projectSelect.value));
   elements.logout.addEventListener('click', () => client.auth.signOut());
-  $('#onboarding-logout').addEventListener('click', () => client.auth.signOut());
+  $('#pending-logout').addEventListener('click', () => client.auth.signOut());
   $('#refresh').addEventListener('click', () => loadRecords(true));
+  $('#admin-refresh').addEventListener('click', loadAdminCatalog);
 
   if (!client) {
     elements.loginButton.disabled = true;
