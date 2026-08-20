@@ -401,6 +401,42 @@
     .admin-project-item { padding: 10px 12px; border-left: 4px solid var(--brand-orange); border-radius: 7px; color: #345b72; background: #fff6ed; }
     .admin-project-item strong { color: var(--brand-blue-deep); }
 
+    /* Resumen global exclusivo del administrador */
+    .admin-priority { margin-bottom: 20px; overflow: hidden; border: 1px solid #f0d0c8; }
+    .admin-priority .toolbar { border-bottom-color: #f2dfda; background: linear-gradient(90deg, #fff9f7, #fff); }
+    .admin-priority-title { display: flex; align-items: center; gap: 10px; }
+    .admin-priority-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px; color: #b43a26; background: #ffebe6; font-weight: 900; }
+    .admin-notification-list { display: grid; gap: 10px; padding: 14px 18px 18px; }
+    .admin-notification {
+      display: grid; grid-template-columns: auto minmax(170px, .85fr) minmax(250px, 1.35fr) auto; align-items: center;
+      gap: 14px; padding: 13px 14px; border: 1px solid #e0eaf0; border-left: 5px solid #ef8f25; border-radius: 11px; background: #fbfdfe;
+    }
+    .admin-notification.critical { border-left-color: #d84b37; background: #fffafa; }
+    .admin-notification .company { color: var(--brand-blue-deep); font-size: 14px; font-weight: 850; }
+    .admin-notification .device { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .admin-notification .problem strong { display: block; margin-bottom: 3px; color: #284f66; font-size: 14px; }
+    .admin-notification .problem span, .admin-notification time { color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .admin-notification time { text-align: right; }
+    .admin-notification-empty { display: flex; align-items: center; gap: 12px; padding: 18px; color: #286b56; background: #f4fcf8; font-weight: 750; }
+    .admin-notification-empty span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 50%; color: #fff; background: #24a779; }
+
+    .admin-company-switcher { margin: 0 0 20px; padding: 17px 18px; }
+    .admin-company-switcher-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
+    .admin-company-switcher-head strong { display: block; color: var(--brand-blue-deep); font-size: 15px; }
+    .admin-company-chips { display: flex; flex-wrap: wrap; gap: 9px; }
+    .company-chip { padding: 9px 13px; border: 1px solid #bcd7e4; border-radius: 999px; color: #315c73; background: #fff; font-size: 13px; font-weight: 800; }
+    .company-chip:hover { border-color: var(--brand-blue); color: var(--brand-blue-deep); background: #f2faff; }
+    .company-chip.active { border-color: var(--brand-blue-deep); color: #fff; background: var(--brand-blue-deep); box-shadow: 0 6px 14px rgba(7, 60, 88, .17); }
+    .company-group-row td { padding: 10px 15px; color: #234f67; background: #eaf5fa; font-size: 13px; font-weight: 900; letter-spacing: .02em; }
+    .company-group-row:hover { background: #eaf5fa; }
+    .company-name-cell strong { display: block; color: var(--brand-blue-deep); }
+    .company-name-cell span { color: var(--muted); font-size: 12px; }
+
+    .admin-context-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding: 13px 16px; border: 1px solid #c7dfea; border-left: 5px solid var(--brand-blue); border-radius: 12px; color: #315c73; background: #f7fcfe; }
+    .admin-context-banner strong { display: block; color: var(--brand-blue-deep); }
+    .admin-context-banner span { color: var(--muted); font-size: 13px; }
+    #admin-inventory-switcher { margin-bottom: 20px; }
+
     @media (max-width: 980px) {
       .auth-view { grid-template-columns: 1fr; }
       .brand-hero { min-height: 34vh; padding: 46px 28px 25px; text-align: center; }
@@ -423,6 +459,8 @@
       .chart-card:first-child { grid-column: auto; }
       .management-grid { grid-template-columns: 1fr; }
       .admin-form-grid { grid-template-columns: 1fr; }
+      .admin-notification { grid-template-columns: auto minmax(0, 1fr); }
+      .admin-notification .problem, .admin-notification time { grid-column: 2; text-align: left; }
     }
 
     @media (max-width: 640px) {
@@ -457,6 +495,7 @@
       .chart-card { padding: 16px 13px; }
       .chart-header { align-items: flex-start; }
       .chart-current { font-size: 21px; }
+      .admin-company-switcher-head, .admin-context-banner { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 420px) {
@@ -595,17 +634,30 @@
               <button id="refresh" class="app-button" type="button">Actualizar datos</button>
             </div>
 
+            <section id="admin-priority" class="section-card admin-priority hidden" aria-labelledby="admin-priority-heading">
+              <div class="toolbar">
+                <div class="admin-priority-title"><span class="admin-priority-icon">!</span><div><h3 id="admin-priority-heading">Atención prioritaria</h3><span class="muted">Incidentes activos y equipos que requieren revisión.</span></div></div>
+                <span id="admin-priority-meta" class="pill neutral">Revisando equipos…</span>
+              </div>
+              <div id="admin-notification-list" class="admin-notification-list"><div class="empty">Cargando notificaciones relevantes…</div></div>
+            </section>
+
             <div class="cards">
-              <article class="card brand-blue"><span class="label">Dispositivos</span><span id="device-count" class="value">0</span><span class="card-note">Equipos registrados en la plataforma</span></article>
-              <article class="card"><span class="label">Comunicando ahora</span><span id="online-count" class="value">0</span><span class="card-note">Enviaron datos en los últimos 30 segundos</span></article>
-              <article class="card brand-orange"><span class="label">Sin comunicación</span><span id="offline-count" class="value">0</span><span class="card-note">Más de 30 segundos sin reportar datos</span></article>
-              <article class="card"><span class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Calculando situaciones que requieren revisión…</span></article>
+              <article class="card brand-blue"><span id="summary-card-1-label" class="label">Dispositivos</span><span id="device-count" class="value">0</span><span id="summary-card-1-note" class="card-note">Equipos registrados en la plataforma</span></article>
+              <article class="card"><span id="summary-card-2-label" class="label">Comunicando ahora</span><span id="online-count" class="value">0</span><span id="summary-card-2-note" class="card-note">Enviaron datos en los últimos 30 segundos</span></article>
+              <article class="card brand-orange"><span id="summary-card-3-label" class="label">Sin comunicación</span><span id="offline-count" class="value">0</span><span id="summary-card-3-note" class="card-note">Más de 30 segundos sin reportar datos</span></article>
+              <article class="card"><span id="summary-card-4-label" class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Calculando situaciones que requieren revisión…</span></article>
             </div>
+
+            <section id="admin-company-switcher" class="section-card admin-company-switcher hidden" aria-label="Filtro de empresa">
+              <div class="admin-company-switcher-head"><div><strong>Empresas supervisadas</strong><span class="muted">Filtra el resumen sin salir de la vista administrativa.</span></div><span id="admin-company-filter-label" class="pill info">Vista: Todas las empresas</span></div>
+              <div id="admin-company-chips" class="admin-company-chips"></div>
+            </section>
 
             <section class="section-card">
               <div class="toolbar">
-                <div><h3>Estado general de los equipos</h3><span id="last-update" class="muted">Cargando información…</span></div>
-                <span class="muted">Selecciona un dispositivo para consultar su ficha completa</span>
+                <div><h3 id="overview-table-title">Estado general de los equipos</h3><span id="last-update" class="muted">Cargando información…</span></div>
+                <span id="overview-table-description" class="muted">Selecciona un dispositivo para consultar su ficha completa</span>
               </div>
               <p id="table-guidance" class="table-guidance"><strong>Importante:</strong> si un dispositivo aparece sin comunicación, los valores mostrados son su última lectura guardada; no representan necesariamente el estado actual.</p>
               <div class="table-wrap">
@@ -625,6 +677,11 @@
                 <p id="detail-description">Consulta la comunicación, alertas e historial de cada medición.</p>
               </div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
+            </div>
+
+            <div id="admin-detail-context" class="admin-context-banner hidden">
+              <div><strong id="admin-detail-context-title">Empresa · Proyecto</strong><span>Consulta individual dentro del entorno seleccionado.</span></div>
+              <span id="admin-detail-context-device" class="pill info">Dispositivo</span>
             </div>
 
             <div class="filter-bar">
@@ -711,6 +768,13 @@
               <div><span class="page-kicker">Inventario autorizado</span><h2>Dispositivos del proyecto</h2><p>Consulta los equipos que el administrador general asignó a este entorno.</p></div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
             </div>
+            <div id="admin-inventory-switcher" class="filter-bar hidden">
+              <div class="select-field">
+                <label for="admin-inventory-project">Empresa y proyecto</label>
+                <select id="admin-inventory-project" aria-label="Seleccionar empresa y proyecto"></select>
+              </div>
+              <span id="admin-inventory-context" class="filter-meta">Selecciona el entorno que deseas consultar</span>
+            </div>
             <section class="section-card">
               <div class="toolbar"><div><h3>Equipos disponibles</h3><span id="device-catalog-meta" class="muted">Cargando…</span></div><span class="muted">Solo el administrador general puede agregar, retirar o modificar dispositivos.</span></div>
               <div id="device-catalog" class="device-catalog"><div class="empty">Todavía no hay dispositivos asignados.</div></div>
@@ -733,18 +797,18 @@
 
             <div class="admin-form-grid section-stack">
               <section class="section-card">
-                <div class="toolbar"><div><h3>Nueva empresa y cuenta</h3><span class="muted">Este formulario sustituye el cuestionario que antes llenaba el cliente.</span></div></div>
+                <div class="toolbar"><div><h3>Registro de empresa</h3><span class="muted">Registra la información de la empresa, su responsable y el entorno de monitoreo que tendrá asignado.</span></div></div>
                 <form id="admin-workspace-form" class="management-form">
                   <div class="form-grid compact-grid">
                     <div class="plain-field"><label for="admin-user-name">Nombre del responsable</label><input id="admin-user-name" required minlength="2" maxlength="100" placeholder="Ej. Laura Méndez"></div>
                     <div class="plain-field"><label for="admin-user-email">Correo para iniciar sesión</label><input id="admin-user-email" type="email" required maxlength="254" autocomplete="off" placeholder="responsable@empresa.com"></div>
                     <div class="plain-field"><label for="admin-user-password">Contraseña temporal</label><input id="admin-user-password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Déjala vacía si la cuenta ya existe"><span class="field-help">Si escribes una contraseña, la plataforma creará la cuenta. Compártela con la empresa por un medio seguro.</span></div>
-                    <div class="plain-field"><label for="admin-company-name">Empresa u organización</label><input id="admin-company-name" required minlength="2" maxlength="120" placeholder="Ej. AquaVida Sistemas"></div>
-                    <div class="plain-field wide"><label for="admin-company-description">Actividad y objetivo del monitoreo</label><textarea id="admin-company-description" required minlength="10" maxlength="1000" placeholder="Describe la empresa y lo que necesita monitorear"></textarea></div>
+                    <div class="plain-field"><label for="admin-company-name">Razón social o nombre de la empresa</label><input id="admin-company-name" required minlength="2" maxlength="120" placeholder="Ej. AquaVida Sistemas"></div>
+                    <div class="plain-field wide"><label for="admin-company-description">Descripción del servicio de monitoreo</label><textarea id="admin-company-description" required minlength="10" maxlength="1000" placeholder="Describe la actividad de la empresa y los equipos o variables que se supervisarán"></textarea></div>
                     <div class="plain-field"><label for="admin-project-name">Nombre del proyecto</label><input id="admin-project-name" required minlength="2" maxlength="120" placeholder="Ej. Acuario principal"></div>
                     <div class="plain-field"><label for="admin-project-type">Tipo de monitoreo</label><select id="admin-project-type" required><option value="ups">UPS y energía</option><option value="agriculture">Cosechas y agricultura</option><option value="aquarium">Temperatura de acuarios</option><option value="generic">Otro proyecto IoT</option></select></div>
                   </div>
-                  <button id="admin-workspace-button" class="app-button" type="submit">Crear cuenta y entorno</button>
+                  <button id="admin-workspace-button" class="app-button" type="submit">Registrar empresa y crear entorno</button>
                   <div id="admin-workspace-message" class="management-message" role="status" aria-live="polite"></div>
                 </form>
               </section>
