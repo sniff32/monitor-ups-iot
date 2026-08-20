@@ -21,7 +21,10 @@
     adminWorkspaceMessage: $('#admin-workspace-message'), adminDeviceForm: $('#admin-device-form'),
     adminDeviceButton: $('#admin-device-button'), adminDeviceMessage: $('#admin-device-message'),
     adminProjectSelect: $('#admin-device-project'), adminCompanyCatalog: $('#admin-company-catalog'),
-    adminDeviceCatalog: $('#admin-device-catalog')
+    adminDeviceCatalog: $('#admin-device-catalog'), adminPriority: $('#admin-priority'),
+    adminNotificationList: $('#admin-notification-list'), adminCompanySwitcher: $('#admin-company-switcher'),
+    adminCompanyChips: $('#admin-company-chips'), adminDetailContext: $('#admin-detail-context'),
+    adminInventorySwitcher: $('#admin-inventory-switcher'), adminInventoryProject: $('#admin-inventory-project')
   };
 
   const rules = {
@@ -77,6 +80,9 @@
   let currentProject = null;
   let allRecords = [];
   let loadingRecords = false;
+  let globalRecords = [];
+  let loadingGlobalRecords = false;
+  let adminCompanyFilter = 'all';
   let realtimeChannel = null;
   let bootToken = 0;
   let adminCatalog = { organizations: [], projects: [], members: [], devices: [] };
@@ -107,8 +113,8 @@
   const formatMetric = (value, unit) => value === null ? '—' : `${Number(value.toFixed(2))} ${unit}`;
   const humanizeKey = key => key.replaceAll('_', ' ').replace(/\b\w/g, character => character.toUpperCase());
 
-  function preset() {
-    return presets[currentProject?.project_type] || presets.generic;
+  function preset(project = currentProject) {
+    return presets[project?.project_type] || presets.generic;
   }
 
   function metricValue(record, metric) {
@@ -121,26 +127,26 @@
     return null;
   }
 
-  function activeMetrics() {
-    const configured = preset().metrics;
+  function activeMetrics(project = currentProject, records = allRecords) {
+    const configured = preset(project).metrics;
     if (configured.length) return configured;
     const keys = new Set();
-    allRecords.slice(0, 200).forEach(record => Object.keys(record.metric_values || {}).forEach(key => keys.add(key)));
-    if (allRecords.some(record => numberValue(record.temperature_c) !== null)) keys.add('temperature_c');
+    records.slice(0, 200).forEach(record => Object.keys(record.metric_values || {}).forEach(key => keys.add(key)));
+    if (records.some(record => numberValue(record.temperature_c) !== null)) keys.add('temperature_c');
     return [...keys].slice(0, 8).map(key => ({
       key, keys: [key], unit: '', label: humanizeKey(key), description: 'Variable reportada por el dispositivo'
     }));
   }
 
   const normalizedStatus = record => String(record?.status || 'SIN_DATO').trim().toUpperCase();
-  function readableStatus(record) {
+  function readableStatus(record, project = currentProject) {
     const status = normalizedStatus(record);
     const upsLabels = {
       ONLINE: 'Operación normal', ON_BATTERY: 'Trabajando con batería', BATTERY: 'Trabajando con batería',
       LOW_BATTERY: 'Batería baja', UPS_DISCONNECTED: 'UPS sin comunicación', DISCONNECTED: 'Sin comunicación',
       OFFLINE: 'Apagado o sin comunicación', FAULT: 'Falla reportada', SIN_DATO: 'Sin estado reportado'
     };
-    if (currentProject?.project_type === 'ups') return upsLabels[status] || humanizeKey(status.toLowerCase());
+    if (project?.project_type === 'ups') return upsLabels[status] || humanizeKey(status.toLowerCase());
     const labels = { ONLINE: 'Funcionamiento normal', OFFLINE: 'Sin comunicación', FAULT: 'Falla reportada', SIN_DATO: 'Sin estado reportado' };
     return labels[status] || humanizeKey(status.toLowerCase());
   }
@@ -159,12 +165,12 @@
     return { connected: Boolean(lastSeen) && ageMs <= rules.offlineAfterMs, lastSeen, ageMs };
   }
 
-  function measurementAlerts(record) {
+  function measurementAlerts(record, project = currentProject) {
     if (!record) return [];
     const alerts = [];
     const push = (key, severity, title, message) => alerts.push({ key, severity, title, message, time: validTime(record) });
     const status = normalizedStatus(record);
-    if (currentProject?.project_type === 'ups') {
+    if (project?.project_type === 'ups') {
       if (['UPS_DISCONNECTED', 'DISCONNECTED', 'OFFLINE'].includes(status)) {
         push('device-status', 'critical', 'UPS sin comunicación', `El dispositivo reportó pérdida de comunicación con el UPS mediante ${interfaceDescription(record)}.`);
       } else if (['ON_BATTERY', 'BATTERY'].includes(status)) {
@@ -172,9 +178,9 @@
       } else if (status === 'LOW_BATTERY') {
         push('device-status', 'critical', 'Batería del UPS baja', 'El UPS informó poca energía disponible en su batería.');
       } else if (status !== 'ONLINE') {
-        push('device-status', 'warning', `Estado del UPS: ${readableStatus(record)}`, 'El equipo informó una condición que requiere revisión.');
+        push('device-status', 'warning', `Estado del UPS: ${readableStatus(record, project)}`, 'El equipo informó una condición que requiere revisión.');
       }
-      const metrics = activeMetrics();
+      const metrics = activeMetrics(project, [record]);
       const temperature = metricValue(record, metrics.find(metric => metric.key === 'temperature_c') || { keys: [] });
       const input = numberValue(record.input_voltage);
       const output = numberValue(record.output_voltage);
@@ -186,14 +192,14 @@
       if (load !== null && load >= rules.loadMax) push('high-load', 'warning', 'Carga elevada', `Lectura: ${formatMetric(load, '%')}.`);
       if (temperature !== null && temperature >= rules.temperatureMax) push('temperature', 'warning', 'Temperatura elevada', `Lectura: ${formatMetric(temperature, '°C')}.`);
     } else if (!['ONLINE', 'OK'].includes(status)) {
-      push('device-status', status === 'FAULT' ? 'critical' : 'warning', `Estado reportado: ${readableStatus(record)}`, 'El sensor informó una condición distinta al funcionamiento normal.');
+      push('device-status', status === 'FAULT' ? 'critical' : 'warning', `Estado reportado: ${readableStatus(record, project)}`, 'El sensor informó una condición distinta al funcionamiento normal.');
     }
     return alerts;
   }
 
-  function currentAlerts(record, now = Date.now()) {
+  function currentAlerts(record, now = Date.now(), project = currentProject) {
     const connection = connectionState(record, now);
-    if (connection.connected) return measurementAlerts(record);
+    if (connection.connected) return measurementAlerts(record, project);
     return [{
       key: 'connection', severity: 'critical',
       title: record ? 'Sin comunicación con el dispositivo' : 'El dispositivo todavía no envía datos',
@@ -251,6 +257,7 @@
     document.querySelectorAll('.nav-button').forEach(button => button.classList.toggle('active', button.dataset.panel === panelId));
     if (panelId === 'device-panel') renderDeviceDetail();
     if (panelId === 'devices-panel') renderDeviceCatalog();
+    if (panelId === 'overview-panel' && workspace.is_platform_admin) renderAdminOverview();
     if (panelId === 'admin-panel' && workspace.is_platform_admin) loadAdminCatalog();
   }
 
@@ -285,16 +292,32 @@
     return `<span class="last-reading">${formatted}</span><span class="stale-note">Último dato recibido</span>`;
   }
 
+  function applyAdministratorIdentity() {
+    $('#header-project-title').textContent = 'Panel de administración Monitor IoT';
+    $('#header-company-name').textContent = 'Gestión centralizada de empresas y dispositivos';
+    $('#sidebar-project-name').textContent = 'Administración WiMobile';
+    $('#sidebar-project-description').textContent = 'Acceso del administrador general para supervisar empresas, proyectos y dispositivos.';
+    elements.projectSelect.classList.add('hidden');
+  }
+
   function applyProjectPreset() {
     const selectedPreset = preset();
-    $('#header-project-title').textContent = currentProject.name;
-    $('#header-company-name').textContent = currentProject.organization_name;
-    $('#sidebar-project-name').textContent = currentProject.name;
-    $('#sidebar-project-description').textContent = selectedPreset.description;
-    $('#overview-kicker').textContent = selectedPreset.kicker;
-    $('#overview-title').textContent = selectedPreset.title;
-    $('#overview-description').textContent = selectedPreset.description;
-    $('#detail-title').textContent = `Estadísticas · ${currentProject.name}`;
+    if (workspace.is_platform_admin) {
+      applyAdministratorIdentity();
+      elements.adminDetailContext.classList.remove('hidden');
+      $('#admin-detail-context-title').textContent = `${currentProject.organization_name} · ${currentProject.name}`;
+      $('#detail-title').textContent = 'Estadísticas del equipo';
+    } else {
+      $('#header-project-title').textContent = currentProject.name;
+      $('#header-company-name').textContent = currentProject.organization_name;
+      $('#sidebar-project-name').textContent = currentProject.name;
+      $('#sidebar-project-description').textContent = selectedPreset.description;
+      $('#overview-kicker').textContent = selectedPreset.kicker;
+      $('#overview-title').textContent = selectedPreset.title;
+      $('#overview-description').textContent = selectedPreset.description;
+      elements.adminDetailContext.classList.add('hidden');
+      $('#detail-title').textContent = `Estadísticas · ${currentProject.name}`;
+    }
     $('#detail-description').textContent = 'Consulta la conexión, alertas, gráficas e historial del dispositivo seleccionado.';
     $('#detail-status-label').textContent = selectedPreset.statusLabel;
     $('#workspace-description').textContent = `${currentProject.organization_name}: ${currentProject.business_description || currentProject.description || 'Proyecto privado de monitoreo.'}`;
@@ -308,9 +331,22 @@
   }
 
   function renderProjectSelector() {
+    if (!currentProject) {
+      elements.projectSelect.innerHTML = '';
+      elements.projectSelect.classList.add('hidden');
+      elements.adminInventoryProject.innerHTML = '';
+      elements.adminInventorySwitcher.classList.add('hidden');
+      return;
+    }
     elements.projectSelect.innerHTML = workspace.projects.map(project => `<option value="${esc(project.id)}">${esc(project.name)}</option>`).join('');
     elements.projectSelect.value = currentProject.id;
-    elements.projectSelect.classList.toggle('hidden', workspace.projects.length < 2);
+    elements.projectSelect.classList.toggle('hidden', workspace.is_platform_admin || workspace.projects.length < 2);
+    elements.adminInventoryProject.innerHTML = workspace.projects.map(project => `<option value="${esc(project.id)}">${esc(project.organization_name)} · ${esc(project.name)}</option>`).join('');
+    elements.adminInventoryProject.value = currentProject.id;
+    elements.adminInventorySwitcher.classList.toggle('hidden', !workspace.is_platform_admin);
+    $('#admin-inventory-context').textContent = workspace.is_platform_admin
+      ? `Visualizando: ${currentProject.organization_name} · ${currentProject.name}`
+      : '';
   }
 
   function renderDeviceCatalog() {
@@ -379,11 +415,25 @@
     elements.adminNav.classList.toggle('hidden', !workspace.is_platform_admin);
     if (!workspace.projects?.length) {
       currentProject = null;
+      if (workspace.is_platform_admin) {
+        applyAdministratorIdentity();
+        renderProjectSelector();
+        subscribeToProject();
+        await loadGlobalRecords(true);
+      }
       return;
     }
     const selected = workspace.projects.some(project => project.id === preferredProjectId)
       ? preferredProjectId
       : workspace.projects[0].id;
+    if (workspace.is_platform_admin) {
+      currentProject = workspace.projects.find(project => project.id === selected) || workspace.projects[0];
+      applyAdministratorIdentity();
+      renderProjectSelector();
+      subscribeToProject();
+      await loadGlobalRecords(true);
+      return;
+    }
     await activateProject(selected);
   }
 
@@ -401,7 +451,152 @@
     return result;
   }
 
+  function renderDeviceSelector() {
+    if (!currentProject) {
+      elements.deviceSelect.innerHTML = '<option value="">Sin dispositivos</option>';
+      return;
+    }
+    const ids = latestDevices().map(item => item.deviceId);
+    const previous = elements.deviceSelect.value;
+    elements.deviceSelect.innerHTML = ids.length
+      ? ids.map(id => `<option value="${esc(id)}">${esc(deviceLabel(id))}</option>`).join('')
+      : '<option value="">Sin dispositivos</option>';
+    elements.deviceSelect.value = ids.includes(previous) ? previous : (ids[0] || '');
+  }
+
+  function administratorDeviceEntries(now = Date.now()) {
+    const latest = new Map();
+    globalRecords.forEach(record => {
+      const key = `${record.project_id || ''}|${record.device_id || ''}`;
+      if (record.device_id && !latest.has(key)) latest.set(key, record);
+    });
+    return (workspace.projects || []).flatMap(project => (project.devices || []).map(device => {
+      const record = latest.get(`${project.id}|${device.device_id}`) || null;
+      const connection = connectionState(record, now);
+      const alerts = currentAlerts(record, now, project);
+      const maintenanceAlerts = record && connection.connected ? measurementAlerts(record, project) : [];
+      return { project, device, latest: record, connection, alerts, maintenanceAlerts };
+    }));
+  }
+
+  function primaryAlert(alerts) {
+    return [...alerts].sort((a, b) => Number(b.severity === 'critical') - Number(a.severity === 'critical'))[0] || null;
+  }
+
+  function renderAdminCompanyChips(entries) {
+    const companies = new Map();
+    (workspace.projects || []).forEach(project => {
+      if (!companies.has(project.organization_id)) companies.set(project.organization_id, project.organization_name);
+    });
+    if (adminCompanyFilter !== 'all' && !companies.has(adminCompanyFilter)) adminCompanyFilter = 'all';
+    const totalDevices = entries.length;
+    elements.adminCompanyChips.innerHTML = [
+      `<button class="company-chip${adminCompanyFilter === 'all' ? ' active' : ''}" type="button" data-company-filter="all">Todas (${totalDevices})</button>`,
+      ...[...companies.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es')).map(([id, name]) => {
+        const count = entries.filter(entry => entry.project.organization_id === id).length;
+        return `<button class="company-chip${adminCompanyFilter === id ? ' active' : ''}" type="button" data-company-filter="${esc(id)}">${esc(name)} (${count})</button>`;
+      })
+    ].join('');
+    const selectedName = adminCompanyFilter === 'all' ? 'Todas las empresas' : companies.get(adminCompanyFilter);
+    $('#admin-company-filter-label').textContent = `Vista: ${selectedName}`;
+  }
+
+  function renderAdminOverview() {
+    if (!workspace.is_platform_admin) return;
+    applyAdministratorIdentity();
+    $('#overview-kicker').textContent = 'Supervisión global';
+    $('#overview-title').textContent = 'Resumen administrativo';
+    $('#overview-description').textContent = 'Alertas y condiciones que requieren atención.';
+    $('#overview-table-title').textContent = 'Equipos por empresa';
+    $('#overview-table-description').textContent = 'Abre un equipo para consultar su ficha completa';
+    $('#table-guidance').innerHTML = '<strong>Lectura administrativa:</strong> los datos de un equipo sin comunicación corresponden a su último reporte guardado y se muestran como históricos.';
+    elements.adminPriority.classList.remove('hidden');
+    elements.adminCompanySwitcher.classList.remove('hidden');
+    elements.adminDetailContext.classList.add('hidden');
+
+    const now = Date.now();
+    const entries = administratorDeviceEntries(now);
+    const companies = new Set((workspace.projects || []).map(project => project.organization_id));
+    const alertEntries = entries.filter(entry => entry.alerts.length);
+    const maintenanceEntries = entries.filter(entry => entry.maintenanceAlerts.length);
+    $('#summary-card-1-label').textContent = 'Empresas';
+    $('#summary-card-1-note').textContent = 'Entornos empresariales registrados';
+    $('#summary-card-2-label').textContent = 'Dispositivos';
+    $('#summary-card-2-note').textContent = 'Equipos asignados a las empresas';
+    $('#summary-card-3-label').textContent = 'Alertas activas';
+    $('#summary-card-3-note').textContent = 'Equipos que requieren revisión';
+    $('#summary-card-4-label').textContent = 'Requieren mantenimiento';
+    $('#device-count').textContent = companies.size;
+    $('#online-count').textContent = entries.length;
+    $('#offline-count').textContent = alertEntries.length;
+    $('#active-alert-count').textContent = maintenanceEntries.length;
+    $('#update-state').textContent = 'Condiciones técnicas reportadas por los equipos';
+
+    renderAdminCompanyChips(entries);
+    const filtered = adminCompanyFilter === 'all'
+      ? entries
+      : entries.filter(entry => entry.project.organization_id === adminCompanyFilter);
+    const priority = filtered.filter(entry => entry.alerts.length).sort((a, b) => {
+      const severity = entry => primaryAlert(entry.alerts)?.severity === 'critical' ? 0 : 1;
+      return severity(a) - severity(b) || validTime(a.latest) - validTime(b.latest);
+    });
+    $('#admin-priority-meta').textContent = priority.length ? `${priority.length} equipo${priority.length === 1 ? '' : 's'} por revisar` : 'Sin incidentes activos';
+    $('#admin-priority-meta').className = `pill${priority.length ? ' warning' : ''}`;
+    elements.adminNotificationList.innerHTML = priority.length ? priority.slice(0, 8).map(entry => {
+      const alert = primaryAlert(entry.alerts);
+      return `<article class="admin-notification${alert.severity === 'critical' ? ' critical' : ''}">
+        <span class="admin-priority-icon">!</span>
+        <div><span class="company">${esc(entry.project.organization_name)}</span><span class="device">${esc(entry.device.display_name || entry.device.device_id)} · ${esc(entry.project.name)}</span></div>
+        <div class="problem"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
+        <time>${entry.latest ? esc(formatTime(entry.latest.received_at)) : 'Sin primera lectura'}<br>${entry.connection.connected ? 'Reporte reciente' : 'Atención pendiente'}</time>
+      </article>`;
+    }).join('') : '<div class="admin-notification-empty"><span>✓</span>No hay incidentes activos en la vista seleccionada.</div>';
+
+    elements.deviceTableHead.innerHTML = '<th>Empresa</th><th>Proyecto</th><th>Dispositivo</th><th>Comunicación</th><th>Último estado reportado</th><th>Último dato recibido</th><th>Alerta</th><th></th>';
+    const grouped = new Map();
+    filtered.forEach(entry => {
+      const key = entry.project.organization_id;
+      if (!grouped.has(key)) grouped.set(key, { name: entry.project.organization_name, entries: [] });
+      grouped.get(key).entries.push(entry);
+    });
+    elements.deviceRows.innerHTML = grouped.size ? [...grouped.values()].sort((a, b) => a.name.localeCompare(b.name, 'es')).map(group => {
+      const rows = group.entries.sort((a, b) => Number(Boolean(b.alerts.length)) - Number(Boolean(a.alerts.length)) || (a.device.display_name || a.device.device_id).localeCompare(b.device.display_name || b.device.device_id, 'es')).map(entry => {
+        const latestStatus = entry.latest ? readableStatus(entry.latest, entry.project) : 'Sin estado reportado';
+        const currentAlert = primaryAlert(entry.alerts);
+        return `<tr class="device-row${entry.connection.connected ? '' : ' stale-row'}">
+          <td class="company-name-cell"><strong>${esc(entry.project.organization_name)}</strong><span>Cliente registrado</span></td>
+          <td>${esc(entry.project.name)}</td>
+          <td><button class="device-name-button" type="button" data-open-device="${esc(entry.device.device_id)}" data-project-id="${esc(entry.project.id)}">${esc(entry.device.display_name || entry.device.device_id)}</button><span class="stale-note">${esc(entry.device.device_id)}</span></td>
+          <td><span class="pill${entry.connection.connected ? '' : ' offline'}">${entry.connection.connected ? 'Comunicando' : 'Sin comunicación'}</span></td>
+          <td>${entry.latest ? `<span class="pill${entry.connection.connected && normalizedStatus(entry.latest) === 'ONLINE' ? ' info' : ' warning'}">${entry.connection.connected ? '' : 'Último: '}${esc(latestStatus)}</span>${entry.connection.connected ? '' : '<span class="stale-note">Sin confirmar actualmente</span>'}` : '<span class="pill neutral">Sin datos</span>'}</td>
+          <td>${entry.latest ? esc(formatTime(entry.latest.received_at)) : 'Nunca'}<span class="${entry.connection.connected ? 'muted' : 'stale-note'}">${entry.latest ? `${entry.connection.connected ? ' · Hace ' : 'Sin datos desde hace '}${esc(formatDuration(entry.connection.ageMs))}` : 'Esperando primera lectura'}</span></td>
+          <td>${currentAlert ? `<span class="pill${currentAlert.severity === 'critical' ? ' offline' : ' warning'}">${esc(currentAlert.title)}</span>` : '<span class="pill neutral">Sin alertas</span>'}</td>
+          <td><button class="app-button secondary row-action" type="button" data-open-device="${esc(entry.device.device_id)}" data-project-id="${esc(entry.project.id)}">Abrir equipo</button></td>
+        </tr>`;
+      }).join('');
+      return `<tr class="company-group-row"><td colspan="8">${esc(group.name)} · ${group.entries.length} dispositivo${group.entries.length === 1 ? '' : 's'}</td></tr>${rows}`;
+    }).join('') : '<tr><td colspan="8" class="empty">No hay dispositivos asignados en la vista seleccionada.</td></tr>';
+  }
+
   function renderOverview() {
+    if (workspace.is_platform_admin) {
+      renderDeviceSelector();
+      renderAdminOverview();
+      return;
+    }
+    elements.adminPriority.classList.add('hidden');
+    elements.adminCompanySwitcher.classList.add('hidden');
+    elements.adminDetailContext.classList.add('hidden');
+    $('#overview-table-title').textContent = 'Estado general de los equipos';
+    $('#overview-table-description').textContent = 'Selecciona un dispositivo para consultar su ficha completa';
+    $('#table-guidance').innerHTML = '<strong>Importante:</strong> si un dispositivo aparece sin comunicación, los valores mostrados son su última lectura guardada; no representan necesariamente el estado actual.';
+    $('#summary-card-1-label').textContent = 'Dispositivos';
+    $('#summary-card-1-note').textContent = 'Equipos registrados en la plataforma';
+    $('#summary-card-2-label').textContent = 'Comunicando ahora';
+    $('#summary-card-2-note').textContent = 'Enviaron datos en los últimos 30 segundos';
+    $('#summary-card-3-label').textContent = 'Sin comunicación';
+    $('#summary-card-3-note').textContent = 'Más de 30 segundos sin reportar datos';
+    $('#summary-card-4-label').textContent = 'Alertas activas';
     const items = latestDevices();
     const metrics = activeMetrics();
     const now = Date.now();
@@ -431,10 +626,7 @@
       </tr>`;
     }).join('') : `<tr><td colspan="${columns}" class="empty">No hay equipos vinculados. Agrégalos desde “Mis dispositivos”.</td></tr>`;
 
-    const ids = items.map(item => item.deviceId);
-    const previous = elements.deviceSelect.value;
-    elements.deviceSelect.innerHTML = ids.length ? ids.map(id => `<option value="${esc(id)}">${esc(deviceLabel(id))}</option>`).join('') : '<option value="">Sin dispositivos</option>';
-    elements.deviceSelect.value = ids.includes(previous) ? previous : (ids[0] || '');
+    renderDeviceSelector();
   }
 
   function renderCharts(records) {
@@ -481,6 +673,10 @@
 
   function renderDeviceDetail() {
     const deviceId = elements.deviceSelect.value;
+    if (workspace.is_platform_admin && currentProject) {
+      $('#admin-detail-context-title').textContent = `${currentProject.organization_name} · ${currentProject.name}`;
+      $('#admin-detail-context-device').textContent = deviceId ? deviceLabel(deviceId) : 'Sin dispositivo seleccionado';
+    }
     const limit = Number(elements.rangeSelect.value) || 100;
     const descending = allRecords.filter(record => record.device_id === deviceId);
     const records = descending.slice(0, limit).reverse();
@@ -523,6 +719,41 @@
     return [...merged.values()].sort((a, b) => validTime(b) - validTime(a)).slice(0, 5000);
   }
 
+  function mergeGlobalRecords(records) {
+    const merged = new Map();
+    [...records, ...globalRecords].forEach(record => {
+      const key = record.id || `${record.project_id}|${record.device_id}|${record.sequence}`;
+      if (!merged.has(key)) merged.set(key, record);
+    });
+    return [...merged.values()].sort((a, b) => validTime(b) - validTime(a)).slice(0, 5000);
+  }
+
+  async function loadGlobalRecords(fullHistory = false) {
+    if (!workspace.is_platform_admin || loadingGlobalRecords) return;
+    loadingGlobalRecords = true;
+    $('#update-state').textContent = 'Actualizando condiciones de toda la plataforma…';
+    try {
+      const collected = [], pages = fullHistory ? 5 : 1;
+      for (let page = 0; page < pages; page += 1) {
+        const start = page * 1000;
+        const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).range(start, start + 999);
+        if (error) throw error;
+        collected.push(...data);
+        if (data.length < 1000) break;
+      }
+      globalRecords = fullHistory ? collected : mergeGlobalRecords(collected);
+      renderAdminOverview();
+      $('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${globalRecords.length} lecturas recientes supervisadas`;
+      setServerState(true, 'Servidor conectado');
+    } catch (error) {
+      $('#last-update').textContent = `No fue posible actualizar el resumen global: ${error.message}`;
+      $('#update-state').textContent = 'No fue posible calcular las condiciones actuales';
+      setServerState(false, 'Servidor sin conexión');
+    } finally {
+      loadingGlobalRecords = false;
+    }
+  }
+
   async function loadRecords(fullHistory = false) {
     if (loadingRecords || !currentProject) return;
     loadingRecords = true;
@@ -537,9 +768,13 @@
         if (data.length < 1000) break;
       }
       allRecords = fullHistory ? collected : mergeLatestRecords(collected);
-      renderOverview(); renderDeviceDetail(); renderDeviceCatalog();
-      $('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones de este proyecto`;
-      $('#update-state').textContent = 'Situaciones que requieren revisión';
+      if (workspace.is_platform_admin) renderDeviceSelector();
+      else renderOverview();
+      renderDeviceDetail(); renderDeviceCatalog();
+      if (!workspace.is_platform_admin) {
+        $('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones de este proyecto`;
+        $('#update-state').textContent = 'Situaciones que requieren revisión';
+      }
       setServerState(true, 'Servidor conectado');
     } catch (error) {
       $('#last-update').textContent = `Error: ${error.message}`;
@@ -556,21 +791,31 @@
 
   function subscribeToProject() {
     if (realtimeChannel) client.removeChannel(realtimeChannel);
+    if (workspace.is_platform_admin) {
+      realtimeChannel = client.channel('telemetry-platform-admin')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => {
+          loadGlobalRecords(false);
+          if (currentProject && !$('#device-panel').classList.contains('hidden')) loadRecords(false);
+        })
+        .subscribe();
+      return;
+    }
     if (!currentProject) return;
     realtimeChannel = client.channel(`telemetry-${currentProject.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry', filter: `project_id=eq.${currentProject.id}` }, () => loadRecords(false))
       .subscribe();
   }
 
-  async function activateProject(projectId) {
+  async function activateProject(projectId, options = {}) {
     currentProject = workspace.projects.find(project => project.id === projectId) || workspace.projects[0] || null;
     if (!currentProject) {
       if (workspace.is_platform_admin) {
-        $('#header-project-title').textContent = 'Administración general';
-        $('#header-company-name').textContent = 'Control centralizado de empresas y dispositivos';
+        applyAdministratorIdentity();
         elements.projectSelect.classList.add('hidden');
         showView('dashboard');
-        showPanel('admin-panel');
+        showPanel('overview-panel');
+        subscribeToProject();
+        await loadGlobalRecords(true);
       } else {
         showView('pending');
       }
@@ -578,15 +823,20 @@
     }
     localStorage.setItem('monitor-current-project', currentProject.id);
     allRecords = [];
-    renderProjectSelector(); applyProjectPreset(); renderDeviceCatalog(); renderOverview(); subscribeToProject();
-    showView('dashboard'); showPanel('overview-panel');
+    renderProjectSelector(); applyProjectPreset(); renderDeviceCatalog();
+    if (workspace.is_platform_admin) renderAdminOverview();
+    else renderOverview();
+    subscribeToProject();
+    showView('dashboard');
     await loadRecords(true);
+    if (options.deviceId) elements.deviceSelect.value = options.deviceId;
+    showPanel(options.panel || 'overview-panel');
   }
 
   async function bootstrapSession(session) {
     const token = ++bootToken;
     if (!session) {
-      workspace = { profile: {}, projects: [] }; currentProject = null; allRecords = [];
+      workspace = { profile: {}, projects: [] }; currentProject = null; allRecords = []; globalRecords = []; adminCompanyFilter = 'all';
       elements.adminNav.classList.add('hidden');
       showView('login'); return;
     }
@@ -594,9 +844,18 @@
       workspace = await loadWorkspace();
       if (token !== bootToken) return;
       elements.adminNav.classList.toggle('hidden', !workspace.is_platform_admin);
+      if (workspace.is_platform_admin) {
+        currentProject = workspace.projects?.find(project => project.id === localStorage.getItem('monitor-current-project')) || workspace.projects?.[0] || null;
+        applyAdministratorIdentity();
+        renderProjectSelector();
+        showView('dashboard');
+        showPanel('overview-panel');
+        subscribeToProject();
+        await loadGlobalRecords(true);
+        return;
+      }
       if (!workspace.projects?.length) {
-        if (workspace.is_platform_admin) await activateProject(null);
-        else showView('pending');
+        showView('pending');
         return;
       }
       const remembered = localStorage.getItem('monitor-current-project');
@@ -607,9 +866,17 @@
     }
   }
 
-  function openDevice(deviceId) {
+  async function openDevice(deviceId, projectId = currentProject?.id) {
     if (!deviceId) return;
+    if (workspace.is_platform_admin && projectId && (currentProject?.id !== projectId || !allRecords.length)) {
+      await activateProject(projectId, { panel: 'device-panel', deviceId });
+    }
     elements.deviceSelect.value = deviceId;
+    if (workspace.is_platform_admin && currentProject) {
+      $('#admin-detail-context-title').textContent = `${currentProject.organization_name} · ${currentProject.name}`;
+      $('#admin-detail-context-device').textContent = deviceLabel(deviceId);
+      elements.adminDetailContext.classList.remove('hidden');
+    }
     showPanel('device-panel');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -686,9 +953,18 @@
     showPanel('admin-panel');
   });
 
-  document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => showPanel(button.dataset.panel)));
-  document.querySelectorAll('[data-show-overview]').forEach(button => button.addEventListener('click', () => showPanel('overview-panel')));
-  elements.deviceRows.addEventListener('click', event => { const trigger = event.target.closest('[data-open-device]'); if (trigger) openDevice(trigger.dataset.openDevice); });
+  document.querySelectorAll('.nav-button').forEach(button => button.addEventListener('click', () => {
+    showPanel(button.dataset.panel);
+    if (button.dataset.panel === 'device-panel' && workspace.is_platform_admin && currentProject && !allRecords.length) loadRecords(true);
+  }));
+  document.querySelectorAll('[data-show-overview]').forEach(button => button.addEventListener('click', () => {
+    showPanel('overview-panel');
+    if (workspace.is_platform_admin) loadGlobalRecords(false);
+  }));
+  elements.deviceRows.addEventListener('click', event => {
+    const trigger = event.target.closest('[data-open-device]');
+    if (trigger) openDevice(trigger.dataset.openDevice, trigger.dataset.projectId);
+  });
   elements.deviceCatalog.addEventListener('click', event => { const trigger = event.target.closest('[data-open-device]'); if (trigger) openDevice(trigger.dataset.openDevice); });
   elements.adminDeviceCatalog.addEventListener('click', async event => {
     const trigger = event.target.closest('[data-admin-unassign]');
@@ -707,12 +983,19 @@
     await refreshWorkspace();
     showPanel('admin-panel');
   });
+  elements.adminCompanyChips.addEventListener('click', event => {
+    const trigger = event.target.closest('[data-company-filter]');
+    if (!trigger) return;
+    adminCompanyFilter = trigger.dataset.companyFilter;
+    renderAdminOverview();
+  });
   elements.deviceSelect.addEventListener('change', renderDeviceDetail);
   elements.rangeSelect.addEventListener('change', renderDeviceDetail);
   elements.projectSelect.addEventListener('change', () => activateProject(elements.projectSelect.value));
+  elements.adminInventoryProject.addEventListener('change', () => activateProject(elements.adminInventoryProject.value, { panel: 'devices-panel' }));
   elements.logout.addEventListener('click', () => client.auth.signOut());
   $('#pending-logout').addEventListener('click', () => client.auth.signOut());
-  $('#refresh').addEventListener('click', () => loadRecords(true));
+  $('#refresh').addEventListener('click', () => workspace.is_platform_admin ? loadGlobalRecords(true) : loadRecords(true));
   $('#admin-refresh').addEventListener('click', loadAdminCatalog);
 
   if (!client) {
@@ -720,6 +1003,10 @@
     elements.loginMessage.textContent = `Configuración incompleta en Render: ${config.error}`;
   } else {
     client.auth.onAuthStateChange((_event, session) => setTimeout(() => bootstrapSession(session), 0));
-    setInterval(() => { if (!elements.dashboard.classList.contains('hidden')) loadRecords(false); }, 5000);
+    setInterval(() => {
+      if (elements.dashboard.classList.contains('hidden')) return;
+      if (workspace.is_platform_admin && !$('#overview-panel').classList.contains('hidden')) loadGlobalRecords(false);
+      else loadRecords(false);
+    }, 5000);
   }
 }());
