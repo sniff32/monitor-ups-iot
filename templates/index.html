@@ -407,26 +407,39 @@
     .admin-priority-title { display: flex; align-items: center; gap: 10px; }
     .admin-priority-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 10px; color: #b43a26; background: #ffebe6; font-weight: 900; }
     .admin-notification-list { display: grid; gap: 10px; padding: 14px 18px 18px; }
+    .admin-notification-header, .admin-notification {
+      display: grid; grid-template-columns: 38px minmax(130px, 1fr) minmax(150px, 1fr) minmax(210px, 1.35fr) minmax(90px, .65fr) minmax(150px, .85fr); align-items: center;
+      gap: 14px;
+    }
+    .admin-notification-header { padding: 0 14px 2px; color: #45697e; font-size: 11px; font-weight: 900; letter-spacing: .05em; text-transform: uppercase; }
     .admin-notification {
-      display: grid; grid-template-columns: auto minmax(170px, .85fr) minmax(250px, 1.35fr) auto; align-items: center;
       gap: 14px; padding: 13px 14px; border: 1px solid #e0eaf0; border-left: 5px solid #ef8f25; border-radius: 11px; background: #fbfdfe;
     }
     .admin-notification.critical { border-left-color: #d84b37; background: #fffafa; }
     .admin-notification .company { color: var(--brand-blue-deep); font-size: 14px; font-weight: 850; }
-    .admin-notification .device { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .admin-notification .company + .device { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .admin-notification .device strong { display: block; color: var(--brand-blue-deep); font-size: 13px; }
+    .admin-notification .device span { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; font-weight: 700; }
     .admin-notification .problem strong { display: block; margin-bottom: 3px; color: #284f66; font-size: 14px; }
     .admin-notification .problem span, .admin-notification time { color: var(--muted); font-size: 12px; line-height: 1.45; }
-    .admin-notification time { text-align: right; }
+    .admin-notification time { text-align: left; font-weight: 750; }
     .admin-notification-empty { display: flex; align-items: center; gap: 12px; padding: 18px; color: #286b56; background: #f4fcf8; font-weight: 750; }
     .admin-notification-empty span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 50%; color: #fff; background: #24a779; }
 
-    .admin-company-switcher { margin: 0 0 20px; padding: 17px 18px; }
-    .admin-company-switcher-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 13px; }
-    .admin-company-switcher-head strong { display: block; color: var(--brand-blue-deep); font-size: 15px; }
-    .admin-company-chips { display: flex; flex-wrap: wrap; gap: 9px; }
-    .company-chip { padding: 9px 13px; border: 1px solid #bcd7e4; border-radius: 999px; color: #315c73; background: #fff; font-size: 13px; font-weight: 800; }
-    .company-chip:hover { border-color: var(--brand-blue); color: var(--brand-blue-deep); background: #f2faff; }
-    .company-chip.active { border-color: var(--brand-blue-deep); color: #fff; background: var(--brand-blue-deep); box-shadow: 0 6px 14px rgba(7, 60, 88, .17); }
+    .admin-company-switcher { margin: 0 0 20px; padding: 18px; }
+    .admin-company-switcher-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+    .admin-company-switcher-head strong { display: block; color: var(--brand-blue-deep); font-size: 18px; }
+    .admin-company-switcher-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: stretch; }
+    .admin-company-select-card { padding: 14px; border: 1px solid #d6e6ee; border-radius: 12px; background: #f8fcfe; }
+    .admin-company-select-card label { display: block; margin-bottom: 8px; color: var(--brand-blue-deep); font-size: 13px; font-weight: 900; text-transform: uppercase; }
+    .admin-company-select-card select { width: 100%; min-height: 46px; padding: 9px 36px 9px 12px; border: 2px solid #9fcfe3; border-radius: 9px; color: var(--brand-blue-deep); background: #fff; font-size: 14px; font-weight: 800; }
+    .admin-company-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .company-chip { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 12px; min-height: 84px; padding: 13px 15px; border: 2px solid #c7dce7; border-radius: 13px; color: #315c73; background: #fff; text-align: left; }
+    .company-chip:hover { border-color: var(--brand-blue); background: #f4fbff; transform: translateY(-1px); }
+    .company-chip.active { border-color: #168fd0; color: var(--brand-blue-deep); background: linear-gradient(135deg, #f9fdff, #eaf7fd); box-shadow: 0 8px 20px rgba(12, 145, 199, .13); }
+    .company-chip-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 11px; color: #087fb4; background: #e5f5fc; font-size: 23px; }
+    .company-chip strong { display: block; color: var(--brand-blue-deep); font-size: 15px; }
+    .company-chip span:last-child { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; font-weight: 700; }
     .company-group-row td { padding: 10px 15px; color: #234f67; background: #eaf5fa; font-size: 13px; font-weight: 900; letter-spacing: .02em; }
     .company-group-row:hover { background: #eaf5fa; }
     .company-name-cell strong { display: block; color: var(--brand-blue-deep); }
@@ -436,6 +449,13 @@
     .admin-context-banner strong { display: block; color: var(--brand-blue-deep); }
     .admin-context-banner span { color: var(--muted); font-size: 13px; }
     #admin-inventory-switcher { margin-bottom: 20px; }
+    .admin-context-switch { display: grid; grid-template-columns: minmax(240px, 1fr) minmax(280px, .8fr); align-items: center; gap: 22px; padding: 18px 20px; border-left: 6px solid var(--brand-blue); }
+    .admin-context-switch h3 { margin: 2px 0 5px; color: var(--brand-blue-deep); font-size: 20px; }
+    .admin-context-switch p { margin: 0; color: var(--muted); font-size: 14px; }
+    .admin-context-switch .select-field { min-width: 0; }
+    .admin-context-switch select { border-width: 2px; font-weight: 800; }
+    .admin-device-card { background: linear-gradient(135deg, #fff, #edf8fd); }
+    .admin-maintenance-card { border-color: #f3d4aa; background: linear-gradient(135deg, #fffaf2, #fff0d8); }
 
     @media (max-width: 980px) {
       .auth-view { grid-template-columns: 1fr; }
@@ -459,8 +479,10 @@
       .chart-card:first-child { grid-column: auto; }
       .management-grid { grid-template-columns: 1fr; }
       .admin-form-grid { grid-template-columns: 1fr; }
+      .admin-notification-header { display: none; }
       .admin-notification { grid-template-columns: auto minmax(0, 1fr); }
-      .admin-notification .problem, .admin-notification time { grid-column: 2; text-align: left; }
+      .admin-notification .device, .admin-notification .problem, .admin-notification time, .admin-notification .notification-state { grid-column: 2; text-align: left; }
+      .admin-company-switcher-layout, .admin-context-switch { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
@@ -636,22 +658,25 @@
 
             <section id="admin-priority" class="section-card admin-priority hidden" aria-labelledby="admin-priority-heading">
               <div class="toolbar">
-                <div class="admin-priority-title"><span class="admin-priority-icon">!</span><div><h3 id="admin-priority-heading">Atención prioritaria</h3><span class="muted">Incidentes activos y equipos que requieren revisión.</span></div></div>
+                <div class="admin-priority-title"><span class="admin-priority-icon">!</span><div><h3 id="admin-priority-heading">Notificaciones relevantes</h3><span class="muted">Incidentes activos y equipos que requieren revisión.</span></div></div>
                 <span id="admin-priority-meta" class="pill neutral">Revisando equipos…</span>
               </div>
               <div id="admin-notification-list" class="admin-notification-list"><div class="empty">Cargando notificaciones relevantes…</div></div>
             </section>
 
             <div class="cards">
-              <article class="card brand-blue"><span id="summary-card-1-label" class="label">Dispositivos</span><span id="device-count" class="value">0</span><span id="summary-card-1-note" class="card-note">Equipos registrados en la plataforma</span></article>
-              <article class="card"><span id="summary-card-2-label" class="label">Comunicando ahora</span><span id="online-count" class="value">0</span><span id="summary-card-2-note" class="card-note">Enviaron datos en los últimos 30 segundos</span></article>
-              <article class="card brand-orange"><span id="summary-card-3-label" class="label">Sin comunicación</span><span id="offline-count" class="value">0</span><span id="summary-card-3-note" class="card-note">Más de 30 segundos sin reportar datos</span></article>
-              <article class="card"><span id="summary-card-4-label" class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Calculando situaciones que requieren revisión…</span></article>
+              <article id="summary-card-1" class="card brand-blue"><span id="summary-card-1-label" class="label">Dispositivos</span><span id="device-count" class="value">0</span><span id="summary-card-1-note" class="card-note">Equipos registrados en la plataforma</span></article>
+              <article id="summary-card-2" class="card"><span id="summary-card-2-label" class="label">Comunicando ahora</span><span id="online-count" class="value">0</span><span id="summary-card-2-note" class="card-note">Enviaron datos en los últimos 30 segundos</span></article>
+              <article id="summary-card-3" class="card brand-orange"><span id="summary-card-3-label" class="label">Sin comunicación</span><span id="offline-count" class="value">0</span><span id="summary-card-3-note" class="card-note">Más de 30 segundos sin reportar datos</span></article>
+              <article id="summary-card-4" class="card"><span id="summary-card-4-label" class="label">Alertas activas</span><span id="active-alert-count" class="value">0</span><span id="update-state" class="card-note">Calculando situaciones que requieren revisión…</span></article>
             </div>
 
             <section id="admin-company-switcher" class="section-card admin-company-switcher hidden" aria-label="Filtro de empresa">
-              <div class="admin-company-switcher-head"><div><strong>Empresas supervisadas</strong><span class="muted">Filtra el resumen sin salir de la vista administrativa.</span></div><span id="admin-company-filter-label" class="pill info">Vista: Todas las empresas</span></div>
-              <div id="admin-company-chips" class="admin-company-chips"></div>
+              <div class="admin-company-switcher-head"><div><span class="page-kicker">Cambio de empresa</span><strong>Selecciona la empresa que deseas visualizar</strong><span class="muted">El resumen, las notificaciones y la lista de equipos se filtrarán juntos.</span></div><span id="admin-company-filter-label" class="pill info">Vista: Todas las empresas</span></div>
+              <div class="admin-company-switcher-layout">
+                <div class="admin-company-select-card"><label for="admin-company-select">Empresa seleccionada</label><select id="admin-company-select"><option value="all">Todas las empresas</option></select></div>
+                <div id="admin-company-chips" class="admin-company-chips"></div>
+              </div>
             </section>
 
             <section class="section-card">
@@ -768,13 +793,14 @@
               <div><span class="page-kicker">Inventario autorizado</span><h2>Dispositivos del proyecto</h2><p>Consulta los equipos que el administrador general asignó a este entorno.</p></div>
               <button class="app-button secondary" type="button" data-show-overview>Volver al resumen</button>
             </div>
-            <div id="admin-inventory-switcher" class="filter-bar hidden">
+            <section id="admin-inventory-switcher" class="section-card admin-context-switch hidden">
+              <div><span class="page-kicker">Cambio de empresa</span><h3>Ver dispositivos de otra empresa</h3><p>Selecciona el entorno empresarial y el proyecto cuyo inventario deseas consultar.</p></div>
               <div class="select-field">
                 <label for="admin-inventory-project">Empresa y proyecto</label>
                 <select id="admin-inventory-project" aria-label="Seleccionar empresa y proyecto"></select>
+                <span id="admin-inventory-context" class="field-help">Selecciona el entorno que deseas consultar</span>
               </div>
-              <span id="admin-inventory-context" class="filter-meta">Selecciona el entorno que deseas consultar</span>
-            </div>
+            </section>
             <section class="section-card">
               <div class="toolbar"><div><h3>Equipos disponibles</h3><span id="device-catalog-meta" class="muted">Cargando…</span></div><span class="muted">Solo el administrador general puede agregar, retirar o modificar dispositivos.</span></div>
               <div id="device-catalog" class="device-catalog"><div class="empty">Todavía no hay dispositivos asignados.</div></div>
