@@ -1,70 +1,115 @@
 # Plataforma IoT WiMobile
 
-Plataforma web multiusuario para recibir telemetría en Render, almacenarla en
-Supabase y mostrar una interfaz privada por empresa, proyecto y dispositivo.
+Plataforma privada de monitoreo con administración centralizada. Un solo usuario,
+el **administrador general o jefe**, controla las empresas, usuarios, proyectos y
+dispositivos. Las cuentas de las empresas únicamente consultan sus equipos,
+telemetría, gráficas, historial y alertas.
 
-## Qué cambió
+## Modelo de acceso definitivo
 
-- Cada cuenta completa un cuestionario en su primer inicio de sesión.
-- El cuestionario crea una empresa y su primer proyecto privado.
-- Hay interfaces preconfiguradas para UPS, cosechas, acuarios y telemetría genérica.
-- Cada lectura queda asociada en el servidor a un `project_id`.
-- Las políticas RLS de Supabase impiden que un usuario consulte datos de otra empresa.
-- Un dispositivo sólo se vincula con su ID y un código privado de vinculación.
-- Una cuenta puede pertenecer a varios proyectos y seleccionarlos desde el encabezado.
+- **Jefe:** crea cuentas, registra empresas, crea proyectos, asigna y retira
+  dispositivos y puede consultar todos los entornos.
+- **Empresa:** inicia sesión y solo visualiza los proyectos y equipos que el jefe
+  le asignó.
+- **Cuenta pendiente:** si el jefe todavía no preparó su entorno, verá un aviso de
+  acceso en preparación. Ya no existe el cuestionario de primera entrada.
+- **Dispositivos:** las empresas no pueden vincular, retirar ni modificar equipos.
+
+Supabase aplica esta separación con RLS; no depende de que el navegador oculte
+botones.
 
 ## Archivos principales
 
-- `app.py`: receptor HTTPS, validación y asignación segura del dispositivo.
-- `templates/index.html`: acceso, cuestionario e interfaz visual.
-- `static/dashboard.js`: sesión, proyectos, dispositivos, gráficas y tiempo real.
-- `supabase_multitenant.sql`: tablas, funciones, índices y seguridad RLS.
-- `render.yaml`: servicio web de Render.
-- `requirements.txt`: dependencias de Python.
+- `app.py`: página web, recepción HTTPS de telemetría y creación segura de cuentas
+  por el jefe.
+- `templates/index.html`: acceso, panel empresarial y panel de administración.
+- `static/dashboard.js`: sesiones, gráficas, telemetría y operaciones del jefe.
+- `supabase_multitenant.sql`: estructura multiempresa base.
+- `supabase_admin_control.sql`: migración al modelo de jefe y empresas de solo
+  lectura.
+- `render.yaml`: configuración de despliegue en Render.
 
-## Orden correcto para instalar la actualización
+## Actualización de una instalación existente
 
-1. En Supabase abre **SQL Editor**, crea una consulta nueva, pega todo el contenido
-   de `supabase_multitenant.sql` y pulsa **Run** una sola vez.
-2. Aprovisiona cada dispositivo desde otra consulta del SQL Editor. Usa un código
-   distinto, aleatorio y de al menos ocho caracteres:
+1. Verifica que la cuenta que será el jefe ya exista en **Supabase >
+   Authentication > Users**.
+2. Abre **Supabase > SQL Editor**, crea una consulta nueva, pega completo
+   `supabase_admin_control.sql` y pulsa **Run**.
+3. En otra consulta ejecuta lo siguiente, reemplazando el correo por el correo real
+   del jefe:
 
    ```sql
-   select public.admin_provision_device(
-     'MUPS-01436666',
-     'WM-8F7K-42Q9',
-     'ups',
-     'UPS oficina principal'
-   );
+   insert into public.platform_admins (user_id)
+   select id
+   from auth.users
+   where lower(email) = lower('correo-del-jefe@empresa.com')
+   on conflict (user_id) do nothing;
    ```
 
-3. Sube a GitHub `app.py`, `templates/index.html`, `static/dashboard.js`, este
-   README y `supabase_multitenant.sql`.
-4. Espera a que Render termine el despliegue y muestre **Deploy live**.
-5. Inicia sesión. Las cuentas existentes verán el cuestionario una sola vez.
-6. En el cuestionario o en **Mis dispositivos**, escribe el ID y código de
-   vinculación preparados en el paso 2.
+4. Sube a GitHub estos archivos conservando sus carpetas:
 
-El ID debe coincidir exactamente con el texto que el dispositivo envía como
-`device_id`. El código no viaja en cada lectura: sólo se usa una vez para demostrar
-que el usuario tiene autorización para reclamar ese equipo.
+   - `app.py`
+   - `templates/index.html`
+   - `static/dashboard.js`
+   - `supabase_admin_control.sql`
+   - `README.md`
 
-## Cómo queda aislada la información
+5. Espera a que Render muestre **Deploy live**.
+6. Inicia sesión con la cuenta del jefe. Aparecerá el menú
+   **Administración**.
 
-La página nunca decide por sí sola qué filas pertenecen a un usuario. Supabase lo
-comprueba con RLS:
+La migración conserva la telemetría, empresas, usuarios, proyectos y dispositivos
+existentes. Los usuarios que anteriormente eran `owner` o `admin` dejan de tener
+permisos de modificación desde el navegador; solamente el jefe puede escribir por
+medio de las funciones administrativas protegidas.
 
-`usuario -> membresía -> empresa -> proyecto -> dispositivo -> telemetría`
+## Registrar una empresa desde el panel del jefe
 
-El navegador usa la llave pública y sólo puede leer proyectos de su membresía. El
-receptor de Render usa la llave secreta, busca el `device_id` en `devices` y agrega
-el `project_id` correspondiente antes de insertar la lectura. Un dispositivo aún
-no vinculado se guarda con `project_id = null`; ningún usuario puede verlo y sus
-lecturas se asignan automáticamente cuando se vincula.
+En **Administración > Nueva empresa y cuenta**, el jefe escribe:
+
+- Nombre del responsable.
+- Correo de inicio de sesión.
+- Contraseña temporal, únicamente si desea crear la cuenta desde la plataforma.
+- Nombre de la empresa.
+- Actividad y objetivo del monitoreo.
+- Nombre del proyecto.
+- Tipo de monitoreo: UPS, agricultura, acuarios o genérico.
+
+Si la cuenta ya fue creada en Supabase Authentication, se deja vacía la contraseña
+temporal. El formulario registra el entorno y asocia esa cuenta con la empresa.
+
+## Asignar un dispositivo
+
+En **Administración > Asignar dispositivo**:
+
+1. Selecciona la empresa y proyecto.
+2. Escribe exactamente el `device_id` transmitido por el equipo.
+3. Define el nombre visible y el tipo de dispositivo.
+4. Pulsa **Guardar y asignar dispositivo**.
+
+Las lecturas nuevas quedan asociadas automáticamente al proyecto. En la primera
+asignación también se recuperan las lecturas que el equipo hubiera enviado antes
+de ser registrado.
+
+Al retirar un equipo, deja de aparecer para la empresa y sus lecturas anteriores
+quedan fuera del acceso del cliente. El registro del dispositivo no se elimina y
+el jefe puede asignarlo después a otro proyecto sin entregar a la nueva empresa la
+telemetría perteneciente a la empresa anterior.
+
+## Flujo de telemetría que se conserva
+
+```text
+STM32/SIM900 -> TCP/ngrok -> receptor Python -> HTTPS Render -> Supabase
+```
+
+La actualización administrativa no cambia el firmware, la trama TCP, Ngrok, el
+receptor local ni `POST /api/telemetry`.
+
+El receptor de Render busca el `device_id` en `public.devices` y agrega el
+`project_id` correcto antes de guardar la lectura. El navegador usa la llave
+pública; RLS solamente entrega las filas autorizadas para la sesión.
 
 ## Formato UPS existente
-
-El receptor TCP puede seguir enviando a `POST /api/telemetry` el mismo JSON:
 
 ```json
 {
@@ -79,14 +124,7 @@ El receptor TCP puede seguir enviando a `POST /api/telemetry` el mismo JSON:
 }
 ```
 
-`temperature_c` continúa siendo opcional. El encabezado `X-API-Key` sigue siendo
-obligatorio y debe contener `INGEST_API_KEY`.
-
 ## Formato de sensores variables
-
-Los proyectos de cosechas, acuarios u otros sensores pueden enviar un objeto
-`metrics`. En ese caso los cuatro campos eléctricos de UPS dejan de ser
-obligatorios:
 
 ```json
 {
@@ -102,38 +140,14 @@ obligatorios:
 }
 ```
 
-Variables reconocidas por las interfaces incluidas:
-
-| Proyecto | Variables |
-|---|---|
-| UPS | `temperature_c`, `input_voltage`, `output_voltage`, `battery_voltage`, `load_percent` |
-| Cosechas | `temperature_c`, `humidity_percent`, `soil_moisture_percent`, `light_lux` |
-| Acuarios | `water_temperature_c`, `ph`, `dissolved_oxygen_mg_l`, `water_level_percent` |
-| Genérico | cualquier nombre en minúsculas con números y guion bajo |
-
-El receptor TCP actual interpreta la trama UPS `V1|...`. Para sensores de cosechas
-o acuarios habrá que adaptar ese receptor para formar el JSON `metrics`, sin
-cambiar la seguridad ni la página.
-
 ## Variables privadas de Render
-
-Mantén estas variables solamente en Render:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SECRET_KEY`
 - `INGEST_API_KEY`
 
-No publiques `SUPABASE_SECRET_KEY`, `INGEST_API_KEY` ni códigos de vinculación en
-GitHub. El archivo `.env` local también debe permanecer ignorado.
-
-## Alta de usuarios
-
-Las cuentas se siguen creando o invitando desde **Supabase > Authentication >
-Users**. En su primer inicio de sesión el usuario verá el cuestionario. Después,
-la función `complete_onboarding` crea su empresa, membresía y proyecto en una sola
-transacción.
-
-Para agregar a otra persona a una empresa existente no se debe completar otro
-cuestionario: un administrador debe crear su fila en `organization_members`. Esa
-pantalla de invitaciones puede incorporarse como siguiente módulo.
+No publiques `SUPABASE_SECRET_KEY` ni `INGEST_API_KEY` en GitHub. La creación de
+cuentas desde el panel administrativo pasa por Render y verifica que la sesión
+pertenezca a `public.platform_admins`; la llave secreta nunca se entrega al
+navegador.

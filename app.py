@@ -124,6 +124,50 @@ def supabase_headers(prefer: str | None = None) -> dict[str, str]:
     return headers
 
 
+def request_user_id() -> str | None:
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        return None
+    token = authorization[7:].strip()
+    if not token or len(token) > 8192:
+        return None
+
+    response = requests.get(
+        f"{SUPABASE_URL}/auth/v1/user",
+        headers={
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Authorization": f"Bearer {token}",
+        },
+        timeout=15,
+    )
+    if not response.ok:
+        return None
+    user_id = response.json().get("id")
+    return str(user_id) if user_id else None
+
+
+def request_is_platform_admin() -> bool:
+    user_id = request_user_id()
+    if not user_id:
+        return False
+
+    response = requests.get(
+        f"{SUPABASE_URL}/rest/v1/platform_admins",
+        headers=supabase_headers(),
+        params={"select": "user_id", "user_id": f"eq.{user_id}", "limit": "1"},
+        timeout=15,
+    )
+    return response.ok and bool(response.json())
+
+
+def supabase_auth_admin_headers() -> dict[str, str]:
+    return {
+        "apikey": SUPABASE_SECRET_KEY,
+        "Authorization": f"Bearer {SUPABASE_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
+
+
 def attach_device_scope(record: dict) -> None:
     """Relaciona la lectura con su proyecto sin confiar en datos del cliente."""
     response = requests.get(
@@ -158,6 +202,46 @@ def dashboard():
 def health():
     missing = missing_settings()
     return jsonify({"ok": not missing, "missing": missing}), 200 if not missing else 503
+
+
+@app.post("/api/admin/users")
+def admin_create_user():
+    if not SUPABASE_URL or not SUPABASE_PUBLISHABLE_KEY or not SUPABASE_SECRET_KEY:
+        return jsonify({"ok": False, "error": "Servidor sin configurar"}), 503
+    if not request_is_platform_admin():
+        return jsonify({"ok": False, "error": "Acceso exclusivo del administrador general"}), 403
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({"ok": False, "error": "Se esperaba un objeto JSON"}), 400
+
+    email = str(body.get("email", "")).strip().lower()
+    password = str(body.get("password", ""))
+    display_name = str(body.get("display_name", "")).strip()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", email) or len(email) > 254:
+        return jsonify({"ok": False, "error": "Correo electronico no valido"}), 400
+    if len(password) < 8 or len(password) > 128:
+        return jsonify({"ok": False, "error": "La contrasena temporal debe tener entre 8 y 128 caracteres"}), 400
+    if len(display_name) < 2 or len(display_name) > 100:
+        return jsonify({"ok": False, "error": "Nombre del responsable no valido"}), 400
+
+    response = requests.post(
+        f"{SUPABASE_URL}/auth/v1/admin/users",
+        headers=supabase_auth_admin_headers(),
+        json={
+            "email": email,
+            "password": password,
+            "email_confirm": True,
+            "user_metadata": {"full_name": display_name},
+        },
+        timeout=20,
+    )
+    if not response.ok:
+        detail = response.json().get("msg") or response.json().get("message") or "No fue posible crear la cuenta"
+        return jsonify({"ok": False, "error": detail}), response.status_code
+
+    account = response.json()
+    return jsonify({"ok": True, "user_id": account.get("id"), "email": account.get("email", email)}), 201
 
 
 @app.post("/api/telemetry")
