@@ -114,6 +114,7 @@
   let currentProject = null;
   let allRecords = [];
   let loadingRecords = false;
+  let recordsLoadVersion = 0;
   let globalRecords = [];
   let loadingGlobalRecords = false;
   let adminCompanyFilter = 'all';
@@ -186,6 +187,7 @@
   function activeMetrics(project = currentProject, records = allRecords) {
     const available = new Set();
     records.forEach(record => {
+      if (project?.id && record?.project_id !== project.id) return;
       directMetricKeys.forEach(key => { if (numberValue(record?.[key]) !== null) available.add(key); });
       Object.entries(record?.metric_values || {}).forEach(([key, value]) => {
         if (numberValue(value) !== null) available.add(key);
@@ -717,8 +719,7 @@
     renderDeviceSelector();
   }
 
-  function renderCharts(records) {
-    const metrics = activeMetrics();
+  function renderCharts(records, metrics = activeMetrics(currentProject, records)) {
     elements.chartsGrid.innerHTML = metrics.length ? metrics.map((metric, index) => `
       <article class="chart-card" style="--chart-color:${colors[index % colors.length]}">
         <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>${esc(metric.label)}</h3><span>${esc(metric.description)}</span></div></div><strong id="current-${esc(metric.key)}" class="chart-current">—</strong></div>
@@ -766,7 +767,9 @@
       $('#admin-detail-context-device').textContent = deviceId ? deviceLabel(deviceId) : 'Sin dispositivo seleccionado';
     }
     const limit = Number(elements.rangeSelect.value) || 100;
-    const descending = allRecords.filter(record => record.device_id === deviceId);
+    const descending = allRecords.filter(record =>
+      record.project_id === currentProject?.id && record.device_id === deviceId
+    );
     const records = descending.slice(0, limit).reverse();
     const latest = records.at(-1);
     const hasData = Boolean(latest);
@@ -795,10 +798,10 @@
     $('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `<article class="incident-item"><span class="incident-icon${alert.severity === 'critical' ? ' critical' : ''}">!</span><div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div><time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time></article>`).join('') : '<div class="empty">No se detectaron alertas en este periodo.</div>';
     $('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `<article class="incident-item"><span class="incident-icon critical">!</span><div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}.</span></div><time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time></article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
 
-    const metrics = activeMetrics();
+    const metrics = activeMetrics(currentProject, descending);
     elements.historyTableHead.innerHTML = `<th>Fecha y hora</th><th>${esc(preset().statusLabel)}</th>${metrics.map(metric => `<th>${esc(metric.label)}</th>`).join('')}<th>Secuencia</th>`;
     elements.historyRows.innerHTML = descending.slice(0, limit).map(record => `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableStatus(record))}</span></td>${metrics.map(metric => `<td>${esc(formatMetric(metricValue(record, metric), metric.unit))}</td>`).join('')}<td>${esc(record.sequence)}</td></tr>`).join('');
-    renderCharts(records);
+    renderCharts(records, metrics);
   }
 
   function mergeLatestRecords(records) {
@@ -843,19 +846,26 @@
   }
 
   async function loadRecords(fullHistory = false) {
-    if (loadingRecords || !currentProject) return;
-    loadingRecords = true;
+    if (!currentProject) return;
+    const projectId = currentProject.id;
+    if (loadingRecords === projectId) return;
+    const loadVersion = ++recordsLoadVersion;
+    loadingRecords = projectId;
     $('#update-state').textContent = 'Actualizando el resumen…';
     try {
       const collected = [], pages = fullHistory ? 5 : 1;
       for (let page = 0; page < pages; page += 1) {
         const start = page * 1000;
-        const { data, error } = await client.from('telemetry').select('*').eq('project_id', currentProject.id).order('received_at', { ascending: false }).range(start, start + 999);
+        const { data, error } = await client.from('telemetry').select('*').eq('project_id', projectId).order('received_at', { ascending: false }).range(start, start + 999);
         if (error) throw error;
         collected.push(...data);
         if (data.length < 1000) break;
       }
-      allRecords = fullHistory ? collected : mergeLatestRecords(collected);
+      if (loadVersion !== recordsLoadVersion || currentProject?.id !== projectId) return;
+      const scopedRecords = collected.filter(record => record.project_id === projectId);
+      allRecords = fullHistory
+        ? scopedRecords
+        : mergeLatestRecords(scopedRecords).filter(record => record.project_id === projectId);
       if (workspace.is_platform_admin) renderDeviceSelector();
       else renderOverview();
       renderDeviceDetail(); renderDeviceCatalog();
@@ -868,7 +878,9 @@
       $('#last-update').textContent = `Error: ${error.message}`;
       $('#update-state').textContent = 'No fue posible actualizar las alertas';
       setServerState(false, 'Servidor sin conexión');
-    } finally { loadingRecords = false; }
+    } finally {
+      if (loadVersion === recordsLoadVersion) loadingRecords = false;
+    }
   }
 
   async function loadWorkspace() {
@@ -895,6 +907,8 @@
   }
 
   async function activateProject(projectId, options = {}) {
+    recordsLoadVersion += 1;
+    loadingRecords = false;
     currentProject = workspace.projects.find(project => project.id === projectId) || workspace.projects[0] || null;
     if (!currentProject) {
       if (workspace.is_platform_admin) {
@@ -919,6 +933,26 @@
     await loadRecords(true);
     if (options.deviceId) elements.deviceSelect.value = options.deviceId;
     showPanel(options.panel || 'overview-panel');
+  }
+
+  async function selectAdministratorCompany(companyId) {
+    adminCompanyFilter = companyId;
+    if (companyId === 'all') {
+      renderAdminOverview();
+      return;
+    }
+    const companyProjects = (workspace.projects || []).filter(project => project.organization_id === companyId);
+    if (!companyProjects.length) {
+      adminCompanyFilter = 'all';
+      renderAdminOverview();
+      return;
+    }
+    const targetProject = companyProjects.find(project => project.id === currentProject?.id) || companyProjects[0];
+    if (currentProject?.id !== targetProject.id || !allRecords.length) {
+      await activateProject(targetProject.id, { panel: 'overview-panel' });
+      return;
+    }
+    renderAdminOverview();
   }
 
   async function bootstrapSession(session) {
@@ -1071,15 +1105,13 @@
     await refreshWorkspace();
     showPanel('admin-panel');
   });
-  elements.adminCompanyChips.addEventListener('click', event => {
+  elements.adminCompanyChips.addEventListener('click', async event => {
     const trigger = event.target.closest('[data-company-filter]');
     if (!trigger) return;
-    adminCompanyFilter = trigger.dataset.companyFilter;
-    renderAdminOverview();
+    await selectAdministratorCompany(trigger.dataset.companyFilter);
   });
-  elements.adminCompanySelect.addEventListener('change', () => {
-    adminCompanyFilter = elements.adminCompanySelect.value;
-    renderAdminOverview();
+  elements.adminCompanySelect.addEventListener('change', async () => {
+    await selectAdministratorCompany(elements.adminCompanySelect.value);
   });
   elements.deviceSelect.addEventListener('change', renderDeviceDetail);
   elements.rangeSelect.addEventListener('change', renderDeviceDetail);
