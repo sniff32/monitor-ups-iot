@@ -27,6 +27,8 @@ botones.
 - `supabase_multitenant.sql`: estructura multiempresa base.
 - `supabase_admin_control.sql`: migración al modelo de jefe y empresas de solo
   lectura.
+- `supabase_intelligence.sql`: historial de diagnósticos, límites privados por
+  dispositivo y puntuación de salud.
 - `render.yaml`: configuración de despliegue en Render.
 
 ## Actualización de una instalación existente
@@ -46,16 +48,19 @@ botones.
    on conflict (user_id) do nothing;
    ```
 
-4. Sube a GitHub estos archivos conservando sus carpetas:
+4. En otra consulta nueva ejecuta completo `supabase_intelligence.sql`. Debe
+   finalizar con **Success. No rows returned**.
+5. Sube a GitHub estos archivos conservando sus carpetas:
 
    - `app.py`
    - `templates/index.html`
    - `static/dashboard.js`
    - `supabase_admin_control.sql`
+   - `supabase_intelligence.sql`
    - `README.md`
 
-5. Espera a que Render muestre **Deploy live**.
-6. Inicia sesión con la cuenta del jefe. Aparecerá el menú
+6. Espera a que Render muestre **Deploy live**.
+7. Inicia sesión con la cuenta del jefe. Aparecerá el menú
    **Administración**.
 
 La migración conserva la telemetría, empresas, usuarios, proyectos y dispositivos
@@ -139,6 +144,84 @@ pública; RLS solamente entrega las filas autorizadas para la sesión.
   }
 }
 ```
+
+## Detección automática de variables
+
+La plataforma no limita las lecturas al tipo de proyecto. El tipo `ups`,
+`aquarium`, `agriculture` o `generic` solamente aporta nombres y unidades
+amigables para variables conocidas. Las columnas y gráficas se construyen con
+las claves numéricas que realmente estén presentes en cada registro.
+
+- Las métricas conocidas se muestran con su nombre y unidad técnica.
+- Las métricas desconocidas también se conservan y se muestran usando su clave.
+- Un proyecto de acuario puede recibir voltajes o energía y un proyecto UPS
+  puede recibir cualquier sensor adicional.
+- Las variables que nunca fueron transmitidas no se muestran.
+- Se admiten hasta 128 variables numéricas por lectura dentro de `metrics`.
+
+El receptor TCP actualizado acepta dos formatos compatibles:
+
+```text
+V1|ID|SEQ|ESTADO|VIN|VOUT|VBAT|CARGA[|TEMP][|CLAVE=VALOR...]
+V2|ID|SEQ|ESTADO|CLAVE=VALOR[|CLAVE=VALOR...]
+```
+
+V1 mantiene sin cambios todos los dispositivos UPS actuales. V2 permite que
+sensores y medidores envíen únicamente variables nombradas, por ejemplo:
+
+```text
+V2|MEDIDOR-01|501|ONLINE|voltage_l1_v=127.2|current_l1_a=3.4|energy_kwh=185.7|frequency_hz=59.98
+```
+
+## Asistente inteligente de mantenimiento
+
+La plataforma incluye un motor básico, explicable y orientativo que se calcula
+en el navegador sobre la telemetría autorizada por Supabase. No usa datos de
+otra organización ni sustituye el diagnóstico de un técnico.
+
+El análisis considera:
+
+- pérdida y repetición de desconexiones;
+- estados de falla informados por el equipo;
+- límites eléctricos del UPS;
+- promedio y desviación estándar;
+- variación sostenida del voltaje;
+- posible caída progresiva de la batería;
+- carga y temperatura sostenidas;
+- valores atípicos en cualquier métrica dinámica;
+- cantidad de muestras y nivel de confianza del resultado.
+
+Cada hallazgo contiene clasificación preventiva, correctiva o de revisión,
+prioridad de 0 a 100, explicación y acción recomendada. También se calcula una
+**salud del equipo de 0 a 100**: saludable, observación, preventivo o correctivo.
+Los usuarios de una empresa ven solamente diagnósticos y puntuaciones de su
+proyecto actual. El administrador general puede supervisar todas las empresas,
+pero su zona superior muestra únicamente hallazgos marcados como urgentes.
+
+Los hallazgos se guardan en `public.intelligence_events`, incluyendo su primera
+y última detección y el momento de resolución. La última puntuación se conserva
+en `public.device_health`. Esto no altera las lecturas originales de
+`public.telemetry`.
+
+En **Administración > Configuración del análisis inteligente**, el jefe puede
+definir para cada dispositivo:
+
+- tiempo para considerar que dejó de comunicar y tiempo para elevarlo como
+  urgencia administrativa;
+- límites de entrada, salida, batería, carga y temperatura para UPS;
+- valores mínimos o máximos para cualquier otra variable realmente transmitida,
+  como pH, oxígeno, humedad, frecuencia, corriente o una métrica nueva.
+
+Los límites se guardan en `public.device_thresholds`. Si no existe una
+configuración individual, se usan los valores iniciales de 30 segundos, urgencia
+a 5 minutos, 100–140 V, batería mínima de 10.5 V, carga máxima de 90 % y
+temperatura máxima de 50 °C.
+
+El cálculo se ejecuta al actualizar una interfaz autenticada y sus resultados se
+sincronizan con Supabase. Por ello, el historial permanece después de cerrar la
+sesión, pero la detección de una desconexión nueva requiere que al menos el panel
+de la empresa o el panel administrativo esté abierto. Para vigilancia autónoma
+las 24 horas deberá añadirse posteriormente un proceso programado en el servidor.
 
 ## Variables privadas de Render
 
