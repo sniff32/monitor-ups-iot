@@ -64,7 +64,7 @@
       description: 'Consulta la temperatura y los parámetros del agua reportados por cada acuario.',
       statusLabel: 'Último estado reportado del sensor',
       metrics: [
-        { key: 'water_temperature_c', keys: ['water_temperature_c', 'temperature_c'], unit: '°C', label: 'Temperatura del agua', description: 'Temperatura reportada por la sonda' },
+        { key: 'water_temperature_c', keys: ['water_temperature_c'], unit: '°C', label: 'Temperatura del agua', description: 'Temperatura reportada por la sonda' },
         { key: 'ph', keys: ['ph'], unit: 'pH', label: 'pH', description: 'Nivel de acidez o alcalinidad', fixedMin: 0, fixedMax: 14 },
         { key: 'dissolved_oxygen_mg_l', keys: ['dissolved_oxygen_mg_l'], unit: 'mg/L', label: 'Oxígeno disuelto', description: 'Oxígeno disponible en el agua' },
         { key: 'water_level_percent', keys: ['water_level_percent'], unit: '%', label: 'Nivel del agua', description: 'Porcentaje de nivel reportado', fixedMin: 0, fixedMax: 100 }
@@ -297,11 +297,11 @@
     return incidents.sort((a, b) => b.startedAt - a.startedAt);
   }
 
-  function buildAlertHistory(recordsAscending, disconnections) {
+  function buildAlertHistory(recordsAscending, disconnections, project = currentProject) {
     const events = [];
     let previousKeys = new Set();
     recordsAscending.forEach(record => {
-      const alerts = measurementAlerts(record);
+      const alerts = measurementAlerts(record, project);
       const keys = new Set(alerts.map(alert => alert.key));
       alerts.forEach(alert => { if (!previousKeys.has(alert.key)) events.push(alert); });
       previousKeys = keys;
@@ -348,6 +348,14 @@
   function deviceLabel(deviceId) {
     const device = deviceDefinition(deviceId);
     return device?.display_name || deviceId;
+  }
+
+  function projectContextForDevice(deviceId, project = currentProject) {
+    if (!project) return project;
+    const device = (Array.isArray(project.devices) ? project.devices : []).find(item => item.device_id === deviceId);
+    const deviceType = String(device?.device_type || '').trim().toLowerCase();
+    if (!deviceType || !presets[deviceType] || deviceType === project.project_type) return project;
+    return { ...project, project_type: deviceType };
   }
 
   function latestDevices() {
@@ -762,6 +770,7 @@
 
   function renderDeviceDetail() {
     const deviceId = elements.deviceSelect.value;
+    const detailProject = projectContextForDevice(deviceId);
     if (workspace.is_platform_admin && currentProject) {
       $('#admin-detail-context-title').textContent = `${currentProject.organization_name} · ${currentProject.name}`;
       $('#admin-detail-context-device').textContent = deviceId ? deviceLabel(deviceId) : 'Sin dispositivo seleccionado';
@@ -780,14 +789,14 @@
 
     const now = Date.now(), connection = connectionState(latest, now), disconnections = detectDisconnections(records, now);
     const activeDisconnection = disconnections.find(incident => incident.active);
-    const alerts = currentAlerts(latest, now), alertHistory = buildAlertHistory(records, disconnections);
+    const alerts = currentAlerts(latest, now, detailProject), alertHistory = buildAlertHistory(records, disconnections, detailProject);
     const totalDowntime = disconnections.reduce((sum, incident) => sum + incident.durationMs, 0);
     $('#detail-device').textContent = deviceLabel(deviceId);
     $('#detail-connection').textContent = connection.connected ? 'Comunicando datos' : 'Sin comunicación';
     $('#detail-downtime').textContent = activeDisconnection ? `Hace ${formatDuration(activeDisconnection.durationMs)} que no se reciben datos` : 'El dispositivo está reportando normalmente';
-    $('#detail-ups-status').textContent = readableStatus(latest);
+    $('#detail-ups-status').textContent = readableStatus(latest, detailProject);
     $('#detail-ups-note').textContent = connection.connected ? 'Confirmado en el reporte más reciente' : 'Dato histórico sin confirmar actualmente';
-    if (currentProject.project_type === 'ups') $('#detail-ups-note').textContent += ` · interfaz UPS: ${interfaceDescription(latest)}`;
+    if (detailProject?.project_type === 'ups') $('#detail-ups-note').textContent += ` · interfaz UPS: ${interfaceDescription(latest)}`;
     $('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
     $('#detail-last-age').textContent = `${formatTime(latest.received_at)} · recibido hace ${formatDuration(connection.ageMs)}`;
     $('#detail-disconnections').textContent = disconnections.length;
@@ -798,9 +807,9 @@
     $('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `<article class="incident-item"><span class="incident-icon${alert.severity === 'critical' ? ' critical' : ''}">!</span><div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div><time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time></article>`).join('') : '<div class="empty">No se detectaron alertas en este periodo.</div>';
     $('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `<article class="incident-item"><span class="incident-icon critical">!</span><div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}.</span></div><time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time></article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
 
-    const metrics = activeMetrics(currentProject, descending);
-    elements.historyTableHead.innerHTML = `<th>Fecha y hora</th><th>${esc(preset().statusLabel)}</th>${metrics.map(metric => `<th>${esc(metric.label)}</th>`).join('')}<th>Secuencia</th>`;
-    elements.historyRows.innerHTML = descending.slice(0, limit).map(record => `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableStatus(record))}</span></td>${metrics.map(metric => `<td>${esc(formatMetric(metricValue(record, metric), metric.unit))}</td>`).join('')}<td>${esc(record.sequence)}</td></tr>`).join('');
+    const metrics = activeMetrics(detailProject, descending);
+    elements.historyTableHead.innerHTML = `<th>Fecha y hora</th><th>${esc(preset(detailProject).statusLabel)}</th>${metrics.map(metric => `<th>${esc(metric.label)}</th>`).join('')}<th>Secuencia</th>`;
+    elements.historyRows.innerHTML = descending.slice(0, limit).map(record => `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableStatus(record, detailProject))}</span></td>${metrics.map(metric => `<td>${esc(formatMetric(metricValue(record, metric), metric.unit))}</td>`).join('')}<td>${esc(record.sequence)}</td></tr>`).join('');
     renderCharts(records, metrics);
   }
 
