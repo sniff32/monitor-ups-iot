@@ -844,9 +844,9 @@
     Object.keys(thresholds.metric_limits || {}).forEach(key => {
       if (!metrics.some(metric => metric.key === key)) metrics.push(inferredMetric(key));
     });
-    dynamicContainer.innerHTML = metrics.length ? metrics.map(metric => {
+    dynamicContainer.innerHTML = metrics.length ? '<div class="dynamic-limit-header"><span>Variable supervisada</span><span>Límite mínimo</span><span>Límite máximo</span></div>' + metrics.map(metric => {
       const configured = thresholds.metric_limits?.[metric.key] || {};
-      return `<div class="dynamic-limit-item" data-metric-key="${esc(metric.key)}"><strong>${esc(metric.label)}${metric.unit ? ` (${esc(metric.unit)})` : ''}</strong><label>Mínimo<input data-limit-min type="number" step="any" value="${numberValue(configured.min) ?? ''}" placeholder="Sin límite"></label><label>Máximo<input data-limit-max type="number" step="any" value="${numberValue(configured.max) ?? ''}" placeholder="Sin límite"></label></div>`;
+      return `<div class="dynamic-limit-item" data-metric-key="${esc(metric.key)}"><strong>${esc(metric.label)}${metric.unit ? ` (${esc(metric.unit)})` : ''}</strong><label><span class="dynamic-limit-mobile-label">Mínimo</span><input data-limit-min type="number" step="any" value="${numberValue(configured.min) ?? ''}" placeholder="Sin límite" aria-label="Límite mínimo de ${esc(metric.label)}"></label><label><span class="dynamic-limit-mobile-label">Máximo</span><input data-limit-max type="number" step="any" value="${numberValue(configured.max) ?? ''}" placeholder="Sin límite" aria-label="Límite máximo de ${esc(metric.label)}"></label></div>`;
     }).join('') : '<div class="empty">Este dispositivo aún no ha transmitido variables adicionales. Aparecerán aquí después de su primera lectura.</div>';
   }
 
