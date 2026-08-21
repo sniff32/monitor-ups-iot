@@ -393,11 +393,16 @@
     .compact-grid { margin-top: 0; }
     .threshold-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 20px; }
     .threshold-grid .plain-field.wide { grid-column: span 2; }
-    .dynamic-limit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-    .dynamic-limit-item { display: grid; grid-template-columns: minmax(150px, 1fr) 110px 110px; align-items: end; gap: 10px; padding: 12px; border: 1px solid #d9e8ef; border-radius: 10px; background: #f8fcfe; }
-    .dynamic-limit-item strong { align-self: center; color: var(--brand-blue-deep); font-size: 13px; }
+    .threshold-grid .plain-field.dynamic-threshold-section { grid-column: 1 / -1; margin-top: 4px; }
+    .dynamic-limit-grid { margin-top: 14px; overflow: hidden; border: 1px solid #d4e5ed; border-radius: 12px; background: #fff; }
+    .dynamic-limit-header, .dynamic-limit-item { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(120px, 160px) minmax(120px, 160px); align-items: center; gap: 14px; }
+    .dynamic-limit-header { padding: 10px 16px; color: #4b6d80; background: #edf6fa; font-size: 11px; font-weight: 900; letter-spacing: .045em; text-transform: uppercase; }
+    .dynamic-limit-item { min-height: 72px; padding: 11px 16px; border-top: 1px solid #dfebf1; background: #fff; }
+    .dynamic-limit-item:nth-child(odd) { background: #f9fcfe; }
+    .dynamic-limit-item strong { color: var(--brand-blue-deep); font-size: 14px; line-height: 1.35; }
     .dynamic-limit-item label { margin: 0; color: var(--muted); font-size: 11px; }
-    .dynamic-limit-item input { min-height: 40px; margin-top: 4px; }
+    .dynamic-limit-item input { min-height: 42px; margin: 0; }
+    .dynamic-limit-mobile-label { display: none; margin-bottom: 5px; color: #4b6d80; font-size: 11px; font-weight: 850; text-transform: uppercase; }
     #detail-health-card.health-good { border-color: #a8dec9; background: linear-gradient(135deg, #f8fffc, #e6f8f1); }
     #detail-health-card.health-watch { border-color: #f1d39a; background: linear-gradient(135deg, #fffdf8, #fff3d9); }
     #detail-health-card.health-critical { border-color: #efb8ae; background: linear-gradient(135deg, #fffafa, #ffe8e3); }
@@ -493,7 +498,6 @@
       .admin-notification { grid-template-columns: auto minmax(0, 1fr); }
       .admin-notification .device, .admin-notification .problem, .admin-notification time, .admin-notification .notification-state { grid-column: 2; text-align: left; }
       .admin-company-switcher-layout, .admin-context-switch, .threshold-grid { grid-template-columns: 1fr 1fr; }
-      .dynamic-limit-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 640px) {
@@ -526,8 +530,11 @@
       .form-grid .wide { grid-column: auto; }
       .threshold-grid { grid-template-columns: 1fr; }
       .threshold-grid .plain-field.wide { grid-column: auto; }
-      .dynamic-limit-item { grid-template-columns: 1fr 1fr; }
+      .threshold-grid .plain-field.dynamic-threshold-section { grid-column: auto; }
+      .dynamic-limit-header { display: none; }
+      .dynamic-limit-item { grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px; }
       .dynamic-limit-item strong { grid-column: 1 / -1; }
+      .dynamic-limit-mobile-label { display: block; }
       .project-context select { max-width: 165px; }
       .chart-card { padding: 16px 13px; }
       .chart-header { align-items: flex-start; }
@@ -887,7 +894,7 @@
                   <div class="plain-field electrical-threshold"><label for="threshold-battery-min">Batería mínima</label><input id="threshold-battery-min" type="number" step="0.1" value="10.5" required><span class="field-help">Voltios.</span></div>
                   <div class="plain-field electrical-threshold"><label for="threshold-load-max">Carga máxima</label><input id="threshold-load-max" type="number" min="1" max="200" step="0.1" value="90" required><span class="field-help">Porcentaje.</span></div>
                   <div class="plain-field electrical-threshold"><label for="threshold-temperature-max">Temperatura máxima</label><input id="threshold-temperature-max" type="number" step="0.1" value="50" required><span class="field-help">Grados Celsius.</span></div>
-                  <div class="plain-field wide"><label>Límites de las demás variables detectadas</label><span class="field-help">La plataforma muestra únicamente las variables transmitidas por el dispositivo seleccionado. Deja un campo vacío si no deseas aplicar ese límite.</span><div id="admin-dynamic-limits" class="dynamic-limit-grid"><div class="empty">Selecciona un dispositivo para consultar sus variables.</div></div></div>
+                  <div class="plain-field wide dynamic-threshold-section"><label>Límites de las demás variables detectadas</label><span class="field-help">La plataforma muestra únicamente las variables transmitidas por el dispositivo seleccionado. Deja un campo vacío si no deseas aplicar ese límite.</span><div id="admin-dynamic-limits" class="dynamic-limit-grid"><div class="empty">Selecciona un dispositivo para consultar sus variables.</div></div></div>
                 </div>
                 <button id="admin-threshold-button" class="app-button" type="submit">Guardar límites del dispositivo</button>
                 <div id="admin-threshold-message" class="management-message" role="status" aria-live="polite"></div>
