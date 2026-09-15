@@ -98,8 +98,8 @@
 
     .brand-lockup { display: flex; align-items: center; gap: 25px; }
     .brand-logo {
-      width: clamp(145px, 16vw, 205px);
-      aspect-ratio: 1;
+      width: clamp(250px, 31vw, 470px);
+      height: auto;
       object-fit: contain;
       filter: drop-shadow(0 14px 18px rgba(8, 91, 129, .15));
       mix-blend-mode: multiply;
@@ -170,7 +170,7 @@
       box-shadow: 0 25px 70px rgba(34, 100, 133, .17), 0 3px 13px rgba(34, 100, 133, .08);
       backdrop-filter: blur(14px);
     }
-    .mobile-logo { display: none; width: 92px; margin: 0 auto 18px; mix-blend-mode: multiply; }
+    .mobile-logo { display: none; width: min(245px, 82%); height: auto; margin: 0 auto 18px; mix-blend-mode: multiply; }
     .login-card h2 { margin-bottom: 9px; font-size: clamp(29px, 3vw, 40px); line-height: 1.1; letter-spacing: -.025em; color: var(--brand-blue-deep); }
     .login-card h2 .accent { color: var(--brand-orange); }
     .login-intro { margin-bottom: 27px; color: var(--muted); line-height: 1.55; }
@@ -232,7 +232,7 @@
     }
     body.session-active .app-header { display: flex; }
     .app-title { display: flex; align-items: center; gap: 13px; }
-    .app-title img { width: 51px; height: 51px; object-fit: contain; }
+    .app-title img { width: 148px; height: 48px; object-fit: contain; object-position: left center; }
     .app-title h1 { margin-bottom: 2px; color: var(--brand-blue-deep); font-size: 24px; letter-spacing: -.025em; }
     .app-title p { margin-bottom: 0; color: var(--muted); font-size: 14px; font-weight: 500; }
     .app-header-actions { display: flex; align-items: center; gap: 12px; }
@@ -306,7 +306,30 @@
     .device-row:focus-within { outline: 3px solid rgba(12, 145, 199, .16); outline-offset: -3px; }
     .device-name-button { padding: 0; border: 0; color: var(--brand-blue-deep); background: transparent; font-size: 16px; font-weight: 850; text-align: left; }
     .device-name-button:hover { color: var(--brand-blue); text-decoration: underline; }
-    .row-action { min-height: 34px; padding: 7px 11px; font-size: 12px; }
+    .row-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 36px;
+      padding: 7px 12px;
+      border: 1px solid #a9d5e8;
+      border-radius: 999px;
+      color: var(--brand-blue-deep);
+      background: linear-gradient(180deg, #fff 0%, #f2faff 100%);
+      box-shadow: 0 4px 12px rgba(12, 145, 199, .08);
+      font-size: 12px;
+      font-weight: 850;
+      white-space: nowrap;
+    }
+    .row-action svg { width: 15px; height: 15px; transition: transform .18s ease; }
+    .row-action:hover {
+      color: #fff;
+      border-color: var(--brand-blue);
+      background: linear-gradient(135deg, var(--brand-blue), #087fb4);
+      box-shadow: 0 7px 16px rgba(12, 145, 199, .2);
+    }
+    .row-action:hover svg { transform: translateX(2px); }
     .pill { display: inline-block; padding: 6px 10px; border: 1px solid #8ed9bd; border-radius: 999px; color: #116b4b; background: #effbf6; font-size: 12px; font-weight: 850; }
     .pill.offline { border-color: #f2b5aa; color: #b43a26; background: #fff3f0; }
     .pill.warning { border-color: #f4c47d; color: #9a5b03; background: #fff8e9; }
@@ -399,9 +422,9 @@
     .date-field input:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 4px rgba(12,145,199,.1); }
     .filter-clear { min-height: 41px; }
     .date-filter-meta { margin-left: auto; padding: 9px 0; color: var(--muted); font-size: 13px; }
-    .compact-detail-columns { margin-top: 0; padding: 16px 18px 18px; }
-    .compact-detail-columns .section-card { box-shadow: none; }
-    .compact-detail-columns .incident-list { max-height: 360px; overflow: auto; }
+    .compact-alerts-wrap { padding: 0; }
+    .compact-alerts-wrap .incident-list { max-height: 390px; overflow: auto; }
+    .compact-alerts-wrap .threshold-note { background: #fbfdfe; }
     .history-scroll { max-height: 470px; overflow: auto; }
     .history-scroll thead th { position: sticky; top: 0; z-index: 2; }
 
@@ -466,7 +489,7 @@
       .login-actions { grid-template-columns: 1fr; }
       .login-actions button { width: 100%; }
       .app-header { min-height: 68px; padding: 9px 14px; }
-      .app-title img { width: 43px; height: 43px; }
+      .app-title img { width: 112px; height: 39px; }
       .app-title h1 { font-size: 19px; }
       .app-title p, .live-badge { display: none; }
       .app-header-actions { gap: 7px; }
@@ -508,7 +531,7 @@
 <body>
   <header class="app-header">
     <div class="app-title">
-      <img src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
+      <img src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="WiMobile">
       <div><h1>Monitor UPS IoT</h1><p>Telemetría disponible desde cualquier dispositivo</p></div>
     </div>
     <div class="app-header-actions">
@@ -526,7 +549,7 @@
         <div class="brand-content">
           <span class="eyebrow">Plataforma de monitoreo</span>
           <div class="brand-lockup">
-            <img class="brand-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="">
+            <img class="brand-logo" src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="">
             <div class="brand-copy">
               <h1>Monitor <span>UPS IoT</span></h1>
               <p>Supervisión segura y en tiempo real para mantener tus equipos siempre conectados.</p>
@@ -551,7 +574,7 @@
 
       <div class="auth-panel">
         <section class="login-card" aria-labelledby="login-title">
-          <img class="mobile-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
+          <img class="mobile-logo" src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="WiMobile">
           <h2 id="login-title"><span class="accent">Inicio</span> de sesión</h2>
           <p class="login-intro">Ingresa tus datos para consultar el estado de los dispositivos UPS.</p>
           <form id="login-form">
@@ -665,15 +688,14 @@
                 <article class="card"><span class="label">Comunicación del dispositivo</span><span id="detail-connection" class="value status-value">—</span><span id="detail-downtime" class="card-note">Sin mediciones</span></article>
                 <article class="card brand-orange"><span class="label">Último estado reportado del UPS</span><span id="detail-ups-status" class="value status-value">—</span><span id="detail-ups-note" class="card-note">Todavía no existe un reporte</span></article>
                 <article class="card"><span class="label">Último dato recibido</span><span id="detail-last-seen" class="value status-value">—</span><span id="detail-last-age" class="card-note">Sin mediciones</span></article>
-                <article class="card"><span class="label">Pérdidas de comunicación</span><span id="detail-disconnections" class="value">0</span><span id="detail-total-downtime" class="card-note">0 s en el periodo</span></article>
                 <article class="card"><span class="label">Alertas activas</span><span id="detail-alerts" class="value">0</span><span id="detail-alerts-note" class="card-note">Sin alertas</span></article>
               </div>
 
               <section id="alerts-section" class="section-card section-stack collapsible-section is-collapsed">
                 <button class="collapse-header" type="button" data-collapse-target="alerts-section" aria-expanded="false">
                   <div class="collapse-header-copy">
-                    <h3>Alertas e interrupciones</h3>
-                    <span id="alerts-section-meta" class="muted">Despliega para consultar eventos y pérdidas de comunicación</span>
+                    <h3>Alertas del equipo</h3>
+                    <span id="alerts-section-meta" class="muted">Despliega para consultar los eventos del equipo</span>
                   </div>
                   <span class="collapse-action"><span data-collapse-label>Mostrar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
                 </button>
@@ -690,17 +712,9 @@
                     <button id="alerts-clear-filter" class="app-button secondary filter-clear" type="button">Limpiar filtro</button>
                     <span id="alerts-filter-meta" class="date-filter-meta">Mostrando todos los eventos cargados</span>
                   </div>
-                  <div class="detail-columns compact-detail-columns">
-                    <section class="section-card">
-                      <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Eventos reportados por el UPS y problemas de comunicación detectados por la plataforma</span></div></div>
-                      <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
-                      <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
-                    </section>
-                    <section class="section-card">
-                      <div class="toolbar"><div><h3>Pérdidas de comunicación detectadas</h3><span class="muted">Periodos en los que la plataforma dejó de recibir datos del dispositivo</span></div></div>
-                      <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
-                      <div class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos. La interfaz USB o RS-485 se indicará cuando el dispositivo la incluya en su reporte; de lo contrario se mostrará como “interfaz no reportada”.</div>
-                    </section>
+                  <div class="compact-alerts-wrap">
+                    <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
+                    <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
                   </div>
                 </div>
               </section>
@@ -767,7 +781,15 @@
 
   <script>
     const config = { url: {{ supabase_url|tojson }}, key: {{ supabase_publishable_key|tojson }}, error: {{ configuration_error|tojson }} };
-    const client = config.url && config.key ? supabase.createClient(config.url, config.key) : null;
+    // La sesión vive solo en esta pestaña: recargar conserva acceso; cerrar la pestaña/navegador obliga a iniciar sesión de nuevo.
+    const client = config.url && config.key ? supabase.createClient(config.url, config.key, {
+      auth: {
+        storage: window.sessionStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    }) : null;
     const login = document.querySelector('#login');
     const dashboard = document.querySelector('#dashboard');
     const logout = document.querySelector('#logout');
@@ -846,12 +868,6 @@
 
     function timeInsideRange(time, range) {
       return Number.isFinite(time) && time >= range.from && time <= range.to;
-    }
-
-    function incidentInsideRange(incident, range, now = Date.now()) {
-      const start = incident.startedAt;
-      const end = incident.endedAt ?? now;
-      return end >= range.from && start <= range.to;
     }
 
     function dateRangeLabel(range) {
@@ -1086,7 +1102,10 @@
           <td>${overviewMetric(numberValue(latest.battery_voltage), 'V', connection.connected)}</td>
           <td>${overviewMetric(numberValue(latest.load_percent), '%', connection.connected)}</td>
           <td><span class="pill${alertClass}">${alerts.length}</span></td>
-          <td><button class="app-button secondary row-action" type="button" data-open-device="${esc(latest.device_id)}">Abrir equipo</button></td>
+          <td><button class="row-action" type="button" data-open-device="${esc(latest.device_id)}" aria-label="Ver detalle de ${esc(latest.device_id)}">
+            <span>Ver detalle</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button></td>
         </tr>`;
       }).join('') : '<tr><td colspan="11" class="empty">Todavía no hay equipos con telemetría.</td></tr>';
 
@@ -1186,7 +1205,6 @@
       const activeDisconnection = disconnections.find(incident => incident.active);
       const alerts = currentAlerts(latest, now);
       const alertHistory = buildAlertHistory(allDeviceRecords, disconnections);
-      const totalDowntime = disconnections.reduce((total, incident) => total + incident.durationMs, 0);
 
       document.querySelector('#detail-device').textContent = deviceId;
       document.querySelector('#detail-connection').textContent = connection.connected ? 'Comunicando datos' : 'Sin comunicación';
@@ -1199,22 +1217,19 @@
         : `Dato histórico sin confirmar actualmente · última interfaz UPS: ${interfaceDescription(latest)}`;
       document.querySelector('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
       document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · recibido hace ${formatDuration(connection.ageMs)}`;
-      document.querySelector('#detail-disconnections').textContent = disconnections.length;
-      document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo cargado`;
       document.querySelector('#detail-alerts').textContent = alerts.length;
       document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Hay situaciones que requieren revisión' : 'No hay alertas activas';
 
       const alertRange = selectedDateRange(alertsFrom, alertsTo);
       const historyRange = selectedDateRange(historyFrom, historyTo);
       const filteredAlerts = alertRange.valid ? alertHistory.filter(alert => timeInsideRange(alert.time, alertRange)) : [];
-      const filteredDisconnections = alertRange.valid ? disconnections.filter(incident => incidentInsideRange(incident, alertRange, now)) : [];
       const filteredHistory = historyRange.valid
         ? deviceRecordsDescending.filter(record => timeInsideRange(validTime(record), historyRange))
         : [];
 
-      document.querySelector('#alerts-section-meta').textContent = `${filteredAlerts.length} alertas · ${filteredDisconnections.length} interrupciones en el rango seleccionado`;
+      document.querySelector('#alerts-section-meta').textContent = `${filteredAlerts.length} eventos en el rango seleccionado`;
       document.querySelector('#alerts-filter-meta').textContent = alertRange.valid
-        ? `${filteredAlerts.length + filteredDisconnections.length} eventos · ${dateRangeLabel(alertRange)}`
+        ? `${filteredAlerts.length} eventos · ${dateRangeLabel(alertRange)}`
         : 'El valor “Desde” debe ser anterior a “Hasta”';
       document.querySelector('#history-section-meta').textContent = `${filteredHistory.length} mediciones en el rango seleccionado`;
       document.querySelector('#history-filter-meta').textContent = historyRange.valid
@@ -1227,13 +1242,6 @@
           <div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
           <time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time>
         </article>`).join('') : `<div class="empty">${alertRange.valid ? 'No se detectaron alertas en este rango.' : 'Corrige el rango de fecha.'}</div>`;
-
-      document.querySelector('#disconnect-list').innerHTML = filteredDisconnections.length ? filteredDisconnections.slice(0, 100).map(incident => `
-        <article class="incident-item">
-          <span class="incident-icon critical">!</span>
-          <div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}. Última interfaz del UPS: ${esc(incident.upsInterface)}.</span></div>
-          <time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time>
-        </article>`).join('') : `<div class="empty">${alertRange.valid ? 'No se detectaron desconexiones en este rango.' : 'Corrige el rango de fecha.'}</div>`;
 
       historyRows.innerHTML = filteredHistory.length ? filteredHistory.slice(0, 1000).map(record => {
         const temperature = metricValue(record, metrics[0]);
