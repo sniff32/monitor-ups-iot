@@ -98,8 +98,8 @@
 
     .brand-lockup { display: flex; align-items: center; gap: 25px; }
     .brand-logo {
-      width: clamp(250px, 31vw, 470px);
-      height: auto;
+      width: clamp(145px, 16vw, 205px);
+      aspect-ratio: 1;
       object-fit: contain;
       filter: drop-shadow(0 14px 18px rgba(8, 91, 129, .15));
       mix-blend-mode: multiply;
@@ -170,7 +170,7 @@
       box-shadow: 0 25px 70px rgba(34, 100, 133, .17), 0 3px 13px rgba(34, 100, 133, .08);
       backdrop-filter: blur(14px);
     }
-    .mobile-logo { display: none; width: min(245px, 82%); height: auto; margin: 0 auto 18px; mix-blend-mode: multiply; }
+    .mobile-logo { display: none; width: 92px; margin: 0 auto 18px; mix-blend-mode: multiply; }
     .login-card h2 { margin-bottom: 9px; font-size: clamp(29px, 3vw, 40px); line-height: 1.1; letter-spacing: -.025em; color: var(--brand-blue-deep); }
     .login-card h2 .accent { color: var(--brand-orange); }
     .login-intro { margin-bottom: 27px; color: var(--muted); line-height: 1.55; }
@@ -232,7 +232,7 @@
     }
     body.session-active .app-header { display: flex; }
     .app-title { display: flex; align-items: center; gap: 13px; }
-    .app-title img { width: 148px; height: 48px; object-fit: contain; object-position: left center; }
+    .app-title img { width: 51px; height: 51px; object-fit: contain; }
     .app-title h1 { margin-bottom: 2px; color: var(--brand-blue-deep); font-size: 24px; letter-spacing: -.025em; }
     .app-title p { margin-bottom: 0; color: var(--muted); font-size: 14px; font-weight: 500; }
     .app-header-actions { display: flex; align-items: center; gap: 12px; }
@@ -489,7 +489,7 @@
       .login-actions { grid-template-columns: 1fr; }
       .login-actions button { width: 100%; }
       .app-header { min-height: 68px; padding: 9px 14px; }
-      .app-title img { width: 112px; height: 39px; }
+      .app-title img { width: 43px; height: 43px; }
       .app-title h1 { font-size: 19px; }
       .app-title p, .live-badge { display: none; }
       .app-header-actions { gap: 7px; }
@@ -531,7 +531,7 @@
 <body>
   <header class="app-header">
     <div class="app-title">
-      <img src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="WiMobile">
+      <img src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
       <div><h1>Monitor UPS IoT</h1><p>Telemetría disponible desde cualquier dispositivo</p></div>
     </div>
     <div class="app-header-actions">
@@ -549,7 +549,7 @@
         <div class="brand-content">
           <span class="eyebrow">Plataforma de monitoreo</span>
           <div class="brand-lockup">
-            <img class="brand-logo" src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="">
+            <img class="brand-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="">
             <div class="brand-copy">
               <h1>Monitor <span>UPS IoT</span></h1>
               <p>Supervisión segura y en tiempo real para mantener tus equipos siempre conectados.</p>
@@ -574,7 +574,7 @@
 
       <div class="auth-panel">
         <section class="login-card" aria-labelledby="login-title">
-          <img class="mobile-logo" src="{{ url_for('static', filename='wimobile-logo-horizontal.png') }}" alt="WiMobile">
+          <img class="mobile-logo" src="{{ url_for('static', filename='wimobile-logo.png') }}" alt="WiMobile">
           <h2 id="login-title"><span class="accent">Inicio</span> de sesión</h2>
           <p class="login-intro">Ingresa tus datos para consultar el estado de los dispositivos UPS.</p>
           <form id="login-form">
