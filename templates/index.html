@@ -330,6 +330,81 @@
     .section-card table.compact { min-width: 850px; }
     .section-card table.history { min-width: 1100px; }
 
+
+    /* Secciones compactas desplegables */
+    .collapsible-section { overflow: hidden; }
+    .collapse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      padding: 18px 20px;
+      border: 0;
+      color: inherit;
+      background: #fff;
+      text-align: left;
+    }
+    .collapse-header:hover { background: #f8fcfe; }
+    .collapse-header h3 { margin: 0 0 4px; color: var(--brand-blue-deep); font-size: 21px; }
+    .collapse-header-copy { min-width: 0; }
+    .collapse-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      padding: 8px 11px;
+      border: 1px solid #b9d6e4;
+      border-radius: 9px;
+      color: var(--brand-blue-deep);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 850;
+    }
+    .collapse-action svg { width: 17px; height: 17px; transition: transform .2s ease; }
+    .collapsible-section.is-collapsed .collapse-body { display: none; }
+    .collapsible-section:not(.is-collapsed) .collapse-action svg { transform: rotate(180deg); }
+    .collapse-body { border-top: 1px solid #e2edf2; }
+
+    /* Filtros de fecha y hora */
+    .date-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 11px;
+      padding: 14px 18px;
+      border-bottom: 1px solid #e2edf2;
+      background: #f8fcfe;
+    }
+    .date-field { min-width: 205px; }
+    .date-field label {
+      display: block;
+      margin-bottom: 6px;
+      color: #45697e;
+      font-size: 11px;
+      font-weight: 850;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .date-field input {
+      width: 100%;
+      min-height: 41px;
+      padding: 8px 10px;
+      border: 1px solid #bed6e2;
+      border-radius: 9px;
+      outline: none;
+      color: var(--ink);
+      background: #fff;
+    }
+    .date-field input:focus { border-color: var(--brand-blue); box-shadow: 0 0 0 4px rgba(12,145,199,.1); }
+    .filter-clear { min-height: 41px; }
+    .date-filter-meta { margin-left: auto; padding: 9px 0; color: var(--muted); font-size: 13px; }
+    .compact-detail-columns { margin-top: 0; padding: 16px 18px 18px; }
+    .compact-detail-columns .section-card { box-shadow: none; }
+    .compact-detail-columns .incident-list { max-height: 360px; overflow: auto; }
+    .history-scroll { max-height: 470px; overflow: auto; }
+    .history-scroll thead th { position: sticky; top: 0; z-index: 2; }
+
     .filter-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 13px; padding: 17px 18px; border: 1px solid #d7e6ee; border-radius: 14px; background: #fff; box-shadow: 0 8px 22px rgba(40, 102, 132, .06); }
     .select-field { min-width: 210px; }
     .select-field label { display: block; margin-bottom: 6px; color: #45697e; font-size: 12px; font-weight: 850; text-transform: uppercase; }
@@ -340,7 +415,7 @@
     .detail-cards { margin-top: 20px; }
     .charts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
     .chart-card { min-width: 0; padding: 20px; border: 1px solid #d7e6ee; border-radius: 15px; background: #fff; box-shadow: 0 9px 26px rgba(40, 102, 132, .07); }
-    .chart-card:first-child { grid-column: span 2; }
+    .chart-card.chart-wide { grid-column: 1 / -1; }
     .chart-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
     .chart-title { display: flex; align-items: center; gap: 10px; }
     .chart-accent { width: 4px; height: 35px; border-radius: 999px; background: var(--chart-color, var(--brand-blue)); }
@@ -379,7 +454,7 @@
       .detail-summary { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
       .detail-columns { grid-template-columns: 1fr; }
       .charts-grid { grid-template-columns: 1fr; }
-      .chart-card:first-child { grid-column: auto; }
+      .chart-card.chart-wide { grid-column: auto; }
     }
 
     @media (max-width: 640px) {
@@ -407,6 +482,10 @@
       .filter-bar { align-items: stretch; flex-direction: column; }
       .select-field { width: 100%; min-width: 0; }
       .filter-meta { margin-left: 0; padding: 0; }
+      .date-filter-bar { align-items: stretch; flex-direction: column; }
+      .date-field { width: 100%; min-width: 0; }
+      .date-filter-meta { margin-left: 0; padding: 0; }
+      .collapse-header { align-items: flex-start; }
       .detail-summary { grid-template-columns: 1fr 1fr; }
       .chart-card { padding: 16px 13px; }
       .chart-header { align-items: flex-start; }
@@ -590,23 +669,46 @@
                 <article class="card"><span class="label">Alertas activas</span><span id="detail-alerts" class="value">0</span><span id="detail-alerts-note" class="card-note">Sin alertas</span></article>
               </div>
 
-              <div class="detail-columns">
-                <section class="section-card">
-                  <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Eventos reportados por el UPS y problemas de comunicación detectados por la plataforma</span></div></div>
-                  <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
-                  <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
-                </section>
-                <section class="section-card">
-                  <div class="toolbar"><div><h3>Pérdidas de comunicación detectadas</h3><span class="muted">Periodos en los que la plataforma dejó de recibir datos del dispositivo</span></div></div>
-                  <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
-                  <div class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos. La interfaz USB o RS-485 se indicará cuando el dispositivo la incluya en su reporte; de lo contrario se mostrará como “interfaz no reportada”.</div>
-                </section>
-              </div>
+              <section id="alerts-section" class="section-card section-stack collapsible-section is-collapsed">
+                <button class="collapse-header" type="button" data-collapse-target="alerts-section" aria-expanded="false">
+                  <div class="collapse-header-copy">
+                    <h3>Alertas e interrupciones</h3>
+                    <span id="alerts-section-meta" class="muted">Despliega para consultar eventos y pérdidas de comunicación</span>
+                  </div>
+                  <span class="collapse-action"><span data-collapse-label>Mostrar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+                </button>
+                <div class="collapse-body">
+                  <div class="date-filter-bar">
+                    <div class="date-field">
+                      <label for="alerts-from">Desde</label>
+                      <input id="alerts-from" type="datetime-local" aria-label="Alertas desde fecha y hora">
+                    </div>
+                    <div class="date-field">
+                      <label for="alerts-to">Hasta</label>
+                      <input id="alerts-to" type="datetime-local" aria-label="Alertas hasta fecha y hora">
+                    </div>
+                    <button id="alerts-clear-filter" class="app-button secondary filter-clear" type="button">Limpiar filtro</button>
+                    <span id="alerts-filter-meta" class="date-filter-meta">Mostrando todos los eventos cargados</span>
+                  </div>
+                  <div class="detail-columns compact-detail-columns">
+                    <section class="section-card">
+                      <div class="toolbar"><div><h3>Alertas del equipo</h3><span class="muted">Eventos reportados por el UPS y problemas de comunicación detectados por la plataforma</span></div></div>
+                      <div id="alerts-list" class="incident-list"><div class="empty">Sin alertas.</div></div>
+                      <div class="threshold-note">Límites iniciales: 30 s sin datos, entrada o salida fuera de 100–140 V, batería menor a 10.5 V, carga igual o mayor a 90 % y temperatura igual o mayor a 50 °C.</div>
+                    </section>
+                    <section class="section-card">
+                      <div class="toolbar"><div><h3>Pérdidas de comunicación detectadas</h3><span class="muted">Periodos en los que la plataforma dejó de recibir datos del dispositivo</span></div></div>
+                      <div id="disconnect-list" class="incident-list"><div class="empty">Sin desconexiones.</div></div>
+                      <div class="threshold-note">La plataforma marca una pérdida de comunicación después de 30 segundos sin recibir datos. La interfaz USB o RS-485 se indicará cuando el dispositivo la incluya en su reporte; de lo contrario se mostrará como “interfaz no reportada”.</div>
+                    </section>
+                  </div>
+                </div>
+              </section>
 
               <div class="charts-grid section-stack">
-                <article class="chart-card" style="--chart-color:#ed6d05">
-                  <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Temperatura</h3><span>Grados Celsius</span></div></div><strong id="current-temperature" class="chart-current">—</strong></div>
-                  <div id="chart-temperature" class="chart" role="img" aria-label="Gráfica de temperatura"></div>
+                <article class="chart-card chart-wide" style="--chart-color:#f59618">
+                  <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Voltaje de batería</h3><span>Nivel eléctrico del banco de baterías</span></div></div><strong id="current-battery" class="chart-current">—</strong></div>
+                  <div id="chart-battery" class="chart" role="img" aria-label="Gráfica de voltaje de batería"></div>
                 </article>
                 <article class="chart-card" style="--chart-color:#0c91c7">
                   <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Voltaje de entrada</h3><span>Alimentación recibida por el UPS</span></div></div><strong id="current-input" class="chart-current">—</strong></div>
@@ -616,25 +718,43 @@
                   <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Voltaje de salida</h3><span>Alimentación entregada por el UPS</span></div></div><strong id="current-output" class="chart-current">—</strong></div>
                   <div id="chart-output" class="chart" role="img" aria-label="Gráfica de voltaje de salida"></div>
                 </article>
-                <article class="chart-card" style="--chart-color:#f59618">
-                  <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Voltaje de batería</h3><span>Nivel eléctrico del banco de baterías</span></div></div><strong id="current-battery" class="chart-current">—</strong></div>
-                  <div id="chart-battery" class="chart" role="img" aria-label="Gráfica de voltaje de batería"></div>
-                </article>
                 <article class="chart-card" style="--chart-color:#087b55">
                   <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Porcentaje de carga</h3><span>Uso de la capacidad del UPS</span></div></div><strong id="current-load" class="chart-current">—</strong></div>
                   <div id="chart-load" class="chart" role="img" aria-label="Gráfica de porcentaje de carga"></div>
                 </article>
+                <article class="chart-card chart-wide" style="--chart-color:#ed6d05">
+                  <div class="chart-header"><div class="chart-title"><span class="chart-accent"></span><div><h3>Temperatura</h3><span>Grados Celsius</span></div></div><strong id="current-temperature" class="chart-current">—</strong></div>
+                  <div id="chart-temperature" class="chart" role="img" aria-label="Gráfica de temperatura"></div>
+                </article>
               </div>
 
-              <section class="section-card section-stack">
-                <div class="toolbar">
-                  <div><h3>Historial de telemetría del equipo</h3><span class="muted">Las mediciones anteriores se conservan únicamente dentro de esta ficha</span></div>
-                </div>
-                <div class="table-wrap">
-                  <table class="history">
-                    <thead><tr><th>Fecha y hora</th><th>Estado reportado del UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
-                    <tbody id="history-rows"><tr><td colspan="8" class="empty">Selecciona un equipo.</td></tr></tbody>
-                  </table>
+              <section id="history-section" class="section-card section-stack collapsible-section is-collapsed">
+                <button class="collapse-header" type="button" data-collapse-target="history-section" aria-expanded="false">
+                  <div class="collapse-header-copy">
+                    <h3>Historial de telemetría del equipo</h3>
+                    <span id="history-section-meta" class="muted">Despliega para consultar mediciones anteriores</span>
+                  </div>
+                  <span class="collapse-action"><span data-collapse-label>Mostrar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+                </button>
+                <div class="collapse-body">
+                  <div class="date-filter-bar">
+                    <div class="date-field">
+                      <label for="history-from">Desde</label>
+                      <input id="history-from" type="datetime-local" aria-label="Historial desde fecha y hora">
+                    </div>
+                    <div class="date-field">
+                      <label for="history-to">Hasta</label>
+                      <input id="history-to" type="datetime-local" aria-label="Historial hasta fecha y hora">
+                    </div>
+                    <button id="history-clear-filter" class="app-button secondary filter-clear" type="button">Limpiar filtro</button>
+                    <span id="history-filter-meta" class="date-filter-meta">Mostrando todas las mediciones cargadas</span>
+                  </div>
+                  <div class="table-wrap history-scroll">
+                    <table class="history">
+                      <thead><tr><th>Fecha y hora</th><th>Estado reportado del UPS</th><th>Temperatura</th><th>Entrada</th><th>Salida</th><th>Batería</th><th>Carga</th><th>Secuencia</th></tr></thead>
+                      <tbody id="history-rows"><tr><td colspan="8" class="empty">Selecciona un equipo.</td></tr></tbody>
+                    </table>
+                  </div>
                 </div>
               </section>
             </div>
@@ -655,6 +775,10 @@
     const historyRows = document.querySelector('#history-rows');
     const deviceSelect = document.querySelector('#device-select');
     const rangeSelect = document.querySelector('#range-select');
+    const alertsFrom = document.querySelector('#alerts-from');
+    const alertsTo = document.querySelector('#alerts-to');
+    const historyFrom = document.querySelector('#history-from');
+    const historyTo = document.querySelector('#history-to');
     const message = document.querySelector('#login-message');
     const loginButton = document.querySelector('#login-button');
     const passwordInput = document.querySelector('#password');
@@ -708,6 +832,35 @@
       const days = Math.floor(hours / 24);
       return `${days} d ${hours % 24} h`;
     };
+
+    function selectedDateRange(fromInput, toInput) {
+      const fromValue = fromInput?.value ? new Date(fromInput.value).getTime() : Number.NEGATIVE_INFINITY;
+      const toValue = toInput?.value ? new Date(toInput.value).getTime() : Number.POSITIVE_INFINITY;
+      return {
+        from: Number.isFinite(fromValue) ? fromValue : Number.NEGATIVE_INFINITY,
+        to: Number.isFinite(toValue) ? toValue : Number.POSITIVE_INFINITY,
+        active: Boolean(fromInput?.value || toInput?.value),
+        valid: fromValue <= toValue
+      };
+    }
+
+    function timeInsideRange(time, range) {
+      return Number.isFinite(time) && time >= range.from && time <= range.to;
+    }
+
+    function incidentInsideRange(incident, range, now = Date.now()) {
+      const start = incident.startedAt;
+      const end = incident.endedAt ?? now;
+      return end >= range.from && start <= range.to;
+    }
+
+    function dateRangeLabel(range) {
+      if (!range.active) return 'sin filtro de fecha';
+      if (!range.valid) return 'rango de fecha inválido';
+      const from = Number.isFinite(range.from) ? new Date(range.from).toLocaleString('es-MX') : 'inicio';
+      const to = Number.isFinite(range.to) ? new Date(range.to).toLocaleString('es-MX') : 'ahora';
+      return `${from} → ${to}`;
+    }
 
     const normalizedUpsStatus = record => String(record?.status ?? 'SIN_DATO').trim().toUpperCase();
 
@@ -855,7 +1008,17 @@
         message: `${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${formatDuration(incident.durationMs)}. Última interfaz del UPS: ${incident.upsInterface}.`,
         time: incident.startedAt
       }));
-      return events.sort((a, b) => b.time - a.time).slice(0, 20);
+      return events.sort((a, b) => b.time - a.time);
+    }
+
+    function setCollapse(section, collapsed) {
+      if (!section) return;
+      section.classList.toggle('is-collapsed', collapsed);
+      const button = section.querySelector('[data-collapse-target]');
+      if (!button) return;
+      button.setAttribute('aria-expanded', String(!collapsed));
+      const label = button.querySelector('[data-collapse-label]');
+      if (label) label.textContent = collapsed ? 'Mostrar' : 'Ocultar';
     }
 
     function showSession(active) {
@@ -1001,14 +1164,16 @@
       const deviceId = deviceSelect.value;
       const limit = Number(rangeSelect.value) || 100;
       const deviceRecordsDescending = allRecords.filter(record => record.device_id === deviceId);
-      const deviceRecords = deviceRecordsDescending.slice(0, limit).reverse();
-      const latest = deviceRecords[deviceRecords.length - 1];
+      const chartRecordsDescending = deviceRecordsDescending.slice(0, limit);
+      const chartRecords = chartRecordsDescending.slice().reverse();
+      const allDeviceRecords = deviceRecordsDescending.slice().reverse();
+      const latest = chartRecords[chartRecords.length - 1];
       const hasData = Boolean(latest);
 
       document.querySelector('#device-detail-content').classList.toggle('hidden', !hasData);
       document.querySelector('#device-detail-empty').classList.toggle('hidden', hasData);
       document.querySelector('#device-range-meta').textContent = hasData
-        ? `${deviceRecords.length} de ${deviceRecordsDescending.length} mediciones cargadas`
+        ? `${chartRecords.length} mediciones usadas en gráficas · ${deviceRecordsDescending.length} cargadas para filtros`
         : 'Selecciona un equipo con telemetría';
       if (!hasData) {
         historyRows.innerHTML = '<tr><td colspan="8" class="empty">No hay mediciones para mostrar.</td></tr>';
@@ -1017,10 +1182,10 @@
 
       const now = Date.now();
       const connection = connectionState(latest, now);
-      const disconnections = detectDisconnections(deviceRecords, now);
+      const disconnections = detectDisconnections(allDeviceRecords, now);
       const activeDisconnection = disconnections.find(incident => incident.active);
       const alerts = currentAlerts(latest, now);
-      const alertHistory = buildAlertHistory(deviceRecords, disconnections);
+      const alertHistory = buildAlertHistory(allDeviceRecords, disconnections);
       const totalDowntime = disconnections.reduce((total, incident) => total + incident.durationMs, 0);
 
       document.querySelector('#detail-device').textContent = deviceId;
@@ -1035,29 +1200,47 @@
       document.querySelector('#detail-last-seen').textContent = new Date(latest.received_at).toLocaleTimeString('es-MX');
       document.querySelector('#detail-last-age').textContent = `${formatTime(latest.received_at)} · recibido hace ${formatDuration(connection.ageMs)}`;
       document.querySelector('#detail-disconnections').textContent = disconnections.length;
-      document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo`;
+      document.querySelector('#detail-total-downtime').textContent = `${formatDuration(totalDowntime)} en el periodo cargado`;
       document.querySelector('#detail-alerts').textContent = alerts.length;
       document.querySelector('#detail-alerts-note').textContent = alerts.length ? 'Hay situaciones que requieren revisión' : 'No hay alertas activas';
 
-      document.querySelector('#alerts-list').innerHTML = alertHistory.length ? alertHistory.map(alert => `
+      const alertRange = selectedDateRange(alertsFrom, alertsTo);
+      const historyRange = selectedDateRange(historyFrom, historyTo);
+      const filteredAlerts = alertRange.valid ? alertHistory.filter(alert => timeInsideRange(alert.time, alertRange)) : [];
+      const filteredDisconnections = alertRange.valid ? disconnections.filter(incident => incidentInsideRange(incident, alertRange, now)) : [];
+      const filteredHistory = historyRange.valid
+        ? deviceRecordsDescending.filter(record => timeInsideRange(validTime(record), historyRange))
+        : [];
+
+      document.querySelector('#alerts-section-meta').textContent = `${filteredAlerts.length} alertas · ${filteredDisconnections.length} interrupciones en el rango seleccionado`;
+      document.querySelector('#alerts-filter-meta').textContent = alertRange.valid
+        ? `${filteredAlerts.length + filteredDisconnections.length} eventos · ${dateRangeLabel(alertRange)}`
+        : 'El valor “Desde” debe ser anterior a “Hasta”';
+      document.querySelector('#history-section-meta').textContent = `${filteredHistory.length} mediciones en el rango seleccionado`;
+      document.querySelector('#history-filter-meta').textContent = historyRange.valid
+        ? `${filteredHistory.length} mediciones · ${dateRangeLabel(historyRange)}`
+        : 'El valor “Desde” debe ser anterior a “Hasta”';
+
+      document.querySelector('#alerts-list').innerHTML = filteredAlerts.length ? filteredAlerts.slice(0, 100).map(alert => `
         <article class="incident-item">
           <span class="incident-icon${alert.severity === 'critical' ? ' critical' : ''}">!</span>
           <div class="incident-copy"><strong>${esc(alert.title)}</strong><span>${esc(alert.message)}</span></div>
           <time class="incident-time">${esc(new Date(alert.time).toLocaleString('es-MX'))}</time>
-        </article>`).join('') : '<div class="empty">No se detectaron alertas en este periodo.</div>';
+        </article>`).join('') : `<div class="empty">${alertRange.valid ? 'No se detectaron alertas en este rango.' : 'Corrige el rango de fecha.'}</div>`;
 
-      document.querySelector('#disconnect-list').innerHTML = disconnections.length ? disconnections.map(incident => `
+      document.querySelector('#disconnect-list').innerHTML = filteredDisconnections.length ? filteredDisconnections.slice(0, 100).map(incident => `
         <article class="incident-item">
           <span class="incident-icon critical">!</span>
           <div class="incident-copy"><strong>${incident.active ? 'Sin comunicación con el dispositivo' : 'Comunicación del dispositivo recuperada'}</strong><span>${incident.active ? 'Tiempo sin recibir datos' : 'Duración de la interrupción'}: ${esc(formatDuration(incident.durationMs))}. Última interfaz del UPS: ${esc(incident.upsInterface)}.</span></div>
           <time class="incident-time">${esc(new Date(incident.startedAt).toLocaleString('es-MX'))}${incident.endedAt ? `<br>hasta ${esc(new Date(incident.endedAt).toLocaleString('es-MX'))}` : '<br>en curso'}</time>
-        </article>`).join('') : '<div class="empty">No se detectaron desconexiones en este periodo.</div>';
+        </article>`).join('') : `<div class="empty">${alertRange.valid ? 'No se detectaron desconexiones en este rango.' : 'Corrige el rango de fecha.'}</div>`;
 
-      historyRows.innerHTML = deviceRecordsDescending.slice(0, limit).map(record => {
+      historyRows.innerHTML = filteredHistory.length ? filteredHistory.slice(0, 1000).map(record => {
         const temperature = metricValue(record, metrics[0]);
         return `<tr><td>${esc(new Date(record.received_at).toLocaleString('es-MX'))}</td><td><span class="pill${normalizedUpsStatus(record) === 'ONLINE' ? ' info' : ' warning'}">${esc(readableUpsStatus(record))}</span></td><td>${esc(formatMetric(temperature, '°C'))}</td><td>${esc(formatMetric(numberValue(record.input_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.output_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.battery_voltage), 'V'))}</td><td>${esc(formatMetric(numberValue(record.load_percent), '%'))}</td><td>${esc(record.sequence)}</td></tr>`;
-      }).join('');
-      metrics.forEach(metric => renderLineChart(metric, deviceRecords));
+      }).join('') : `<tr><td colspan="8" class="empty">${historyRange.valid ? 'No hay mediciones en este rango de fecha y hora.' : 'Corrige el rango de fecha.'}</td></tr>`;
+
+      metrics.forEach(metric => renderLineChart(metric, chartRecords));
     }
 
     function mergeLatestRecords(records) {
@@ -1133,6 +1316,23 @@
     });
     deviceSelect.addEventListener('change', renderDeviceDetail);
     rangeSelect.addEventListener('change', renderDeviceDetail);
+    [alertsFrom, alertsTo, historyFrom, historyTo].forEach(input => input.addEventListener('change', renderDeviceDetail));
+    document.querySelector('#alerts-clear-filter').addEventListener('click', () => {
+      alertsFrom.value = '';
+      alertsTo.value = '';
+      renderDeviceDetail();
+    });
+    document.querySelector('#history-clear-filter').addEventListener('click', () => {
+      historyFrom.value = '';
+      historyTo.value = '';
+      renderDeviceDetail();
+    });
+    document.querySelectorAll('[data-collapse-target]').forEach(button => {
+      button.addEventListener('click', () => {
+        const section = document.querySelector(`#${button.dataset.collapseTarget}`);
+        setCollapse(section, !section.classList.contains('is-collapsed'));
+      });
+    });
     logout.addEventListener('click', () => client.auth.signOut());
     document.querySelector('#refresh').addEventListener('click', () => loadRecords(true));
 
