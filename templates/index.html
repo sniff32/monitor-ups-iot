@@ -526,6 +526,127 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
     }
+  
+    /* Administración WiMobile */
+    .admin-only.hidden { display: none !important; }
+    .admin-panel-grid { display: grid; gap: 18px; }
+    .admin-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .admin-summary .card { min-height: 126px; }
+    .admin-section {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 10px 28px rgba(9, 70, 105, .06);
+      overflow: hidden;
+    }
+    .admin-section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+    }
+    .admin-section-head h3 { margin: 0 0 4px; color: var(--brand-blue-deep); }
+    .admin-section-body { padding: 18px 20px 20px; }
+    .admin-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 13px;
+    }
+    .admin-form-grid .field-wide { grid-column: 1 / -1; }
+    .admin-form-grid label {
+      display: grid;
+      gap: 6px;
+      color: #2d566e;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+    .admin-form-grid input,
+    .admin-form-grid select,
+    .admin-form-grid textarea {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #c7dce7;
+      border-radius: 11px;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 11px;
+      font: inherit;
+      outline: none;
+    }
+    .admin-form-grid textarea { min-height: 86px; resize: vertical; }
+    .admin-form-grid input:focus,
+    .admin-form-grid select:focus,
+    .admin-form-grid textarea:focus {
+      border-color: var(--brand-blue);
+      box-shadow: 0 0 0 3px rgba(12, 145, 199, .10);
+    }
+    .admin-form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+    .admin-status { font-size: 12px; color: var(--muted); min-height: 18px; }
+    .admin-table-wrap { overflow: auto; max-height: 430px; }
+    .admin-table { width: 100%; border-collapse: collapse; min-width: 840px; }
+    .admin-table th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-align: left;
+      padding: 11px 12px;
+      background: #edf6fa;
+      color: #3f6377;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .admin-table td {
+      padding: 12px;
+      border-bottom: 1px solid #e2edf3;
+      vertical-align: middle;
+      font-size: 13px;
+    }
+    .admin-table tr:hover td { background: #fbfdfe; }
+    .admin-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .admin-mini-button {
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid #b9d7e5;
+      border-radius: 999px;
+      background: #fff;
+      color: var(--brand-blue-deep);
+      font-weight: 800;
+      font-size: 11px;
+    }
+    .admin-mini-button:hover { background: #eef9fd; border-color: var(--brand-blue); }
+    .admin-mini-button.danger { color: #a23b23; border-color: #efc3b9; }
+    .admin-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #edf8fc;
+      color: var(--brand-blue-deep);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .admin-chip.unassigned { background: #fff4e8; color: #9a5a00; }
+    .admin-empty { padding: 24px; color: var(--muted); text-align: center; }
+    @media (max-width: 900px) {
+      .admin-summary { grid-template-columns: 1fr; }
+      .admin-form-grid { grid-template-columns: 1fr; }
+      .admin-form-grid .field-wide { grid-column: auto; }
+    }
+
   </style>
 </head>
 <body>
@@ -617,6 +738,10 @@
           <button class="nav-button" type="button" data-panel="device-panel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/><path d="M2 21h20"/></svg>
             <span>Estadísticas del equipo</span>
+          </button>
+          <button id="admin-nav-button" class="nav-button admin-only hidden" type="button" data-panel="admin-panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3 4 7v5c0 5 3.4 8.6 8 9 4.6-.4 8-4 8-9V7l-8-4Z"/><path d="M9 12h6M12 9v6"/></svg>
+            <span>Administración</span>
           </button>
           <p class="sidebar-note"><strong>Monitor UPS IoT</strong>Revisa primero si el dispositivo está comunicando. Después consulta el último estado y las mediciones informadas por el UPS.</p>
         </aside>
@@ -774,6 +899,113 @@
             </div>
             <div id="device-detail-empty" class="detail-empty hidden"><h3>No hay datos para mostrar</h3><p>Cuando un dispositivo envíe telemetría aparecerán aquí sus gráficas.</p></div>
           </section>
+
+          <section id="admin-panel" class="dashboard-panel hidden admin-only">
+            <div class="page-heading">
+              <div>
+                <span class="page-kicker">Control WiMobile</span>
+                <h2>Administración</h2>
+                <p>Administra clientes y asigna equipos Monitor UPS IoT sin cambiar la experiencia de monitoreo del cliente.</p>
+              </div>
+              <button id="admin-refresh" class="app-button" type="button">Actualizar catálogo</button>
+            </div>
+
+            <div class="admin-panel-grid">
+              <div class="admin-summary">
+                <article class="card brand-blue"><span class="label">Clientes</span><span id="admin-client-count" class="value">0</span><span class="card-note">Empresas registradas</span></article>
+                <article class="card"><span class="label">Equipos asignados</span><span id="admin-assigned-count" class="value">0</span><span class="card-note">Dispositivos con cliente</span></article>
+                <article class="card brand-orange"><span class="label">Sin asignar</span><span id="admin-unassigned-count" class="value">0</span><span class="card-note">Disponibles para asignación</span></article>
+              </div>
+
+              <section class="admin-section">
+                <div class="admin-section-head">
+                  <div>
+                    <h3>Nuevo cliente</h3>
+                    <span class="muted">Crea la cuenta de acceso y su espacio de monitoreo UPS.</span>
+                  </div>
+                </div>
+                <div class="admin-section-body">
+                  <form id="admin-client-create-form">
+                    <div class="admin-form-grid">
+                      <label>Empresa
+                        <input id="admin-new-company" type="text" maxlength="120" required placeholder="Ej. Comercializadora ABC">
+                      </label>
+                      <label>Responsable
+                        <input id="admin-new-contact" type="text" maxlength="100" required placeholder="Nombre del responsable">
+                      </label>
+                      <label>Correo de acceso
+                        <input id="admin-new-email" type="email" maxlength="200" required placeholder="cliente@empresa.com">
+                      </label>
+                      <label>Contraseña temporal
+                        <input id="admin-new-password" type="password" minlength="8" maxlength="100" required placeholder="Mínimo 8 caracteres">
+                      </label>
+                      <label class="field-wide">Descripción del cliente
+                        <textarea id="admin-new-description" maxlength="1000" required placeholder="Área, sitio o descripción general del cliente."></textarea>
+                      </label>
+                    </div>
+                    <div class="admin-form-actions">
+                      <button class="app-button" type="submit">Crear cliente</button>
+                      <span id="admin-client-create-status" class="admin-status"></span>
+                    </div>
+                  </form>
+                </div>
+              </section>
+
+              <section class="admin-section">
+                <div class="admin-section-head">
+                  <div>
+                    <h3>Clientes</h3>
+                    <span class="muted">Consulta y modifica el nombre o descripción de cada cliente.</span>
+                  </div>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead><tr><th>Cliente</th><th>Usuarios</th><th>Descripción</th><th>Equipos</th><th>Acciones</th></tr></thead>
+                    <tbody id="admin-client-rows"><tr><td colspan="5" class="admin-empty">Sin clientes cargados.</td></tr></tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="admin-section">
+                <div class="admin-section-head">
+                  <div>
+                    <h3>Dispositivos</h3>
+                    <span class="muted">Asigna equipos, cambia su nombre visible y agrega una descripción.</span>
+                  </div>
+                </div>
+                <div class="admin-section-body">
+                  <form id="admin-device-form">
+                    <div class="admin-form-grid">
+                      <label>ID del dispositivo
+                        <input id="admin-device-id" type="text" maxlength="80" required placeholder="MUPS-0001">
+                      </label>
+                      <label>Cliente
+                        <select id="admin-device-client" required><option value="">Selecciona un cliente</option></select>
+                      </label>
+                      <label>Nombre asignado
+                        <input id="admin-device-name" type="text" maxlength="120" placeholder="Ej. UPS Site Principal">
+                      </label>
+                      <label class="field-wide">Descripción
+                        <textarea id="admin-device-description" maxlength="1000" placeholder="Ubicación o función del UPS."></textarea>
+                      </label>
+                    </div>
+                    <div class="admin-form-actions">
+                      <button class="app-button" type="submit">Guardar y asignar</button>
+                      <button id="admin-device-clear" class="app-button secondary" type="button">Limpiar</button>
+                      <span id="admin-device-status" class="admin-status"></span>
+                    </div>
+                  </form>
+                </div>
+                <div class="admin-table-wrap">
+                  <table class="admin-table">
+                    <thead><tr><th>ID</th><th>Nombre</th><th>Cliente</th><th>Descripción</th><th>Último dato</th><th>Acciones</th></tr></thead>
+                    <tbody id="admin-device-rows"><tr><td colspan="6" class="admin-empty">Sin dispositivos cargados.</td></tr></tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </section>
+
         </div>
       </div>
     </section>
@@ -808,6 +1040,10 @@
     const esc = value => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
     let allRecords = [];
     let loadingRecords = false;
+    let currentSession = null;
+    let currentWorkspace = null;
+    let adminCatalog = { organizations: [], projects: [], members: [], devices: [] };
+    let deviceMetadata = new Map();
 
     const rules = {
       offlineAfterMs: 30_000,
@@ -1065,6 +1301,140 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+
+    function rebuildDeviceMetadata() {
+      const map = new Map();
+      const projectDevices = currentWorkspace?.projects?.flatMap(project =>
+        (project.devices || []).map(device => ({
+          ...device,
+          project_id: project.id,
+          organization_id: project.organization_id,
+          organization_name: project.organization_name
+        }))
+      ) || [];
+      [...projectDevices, ...(adminCatalog.devices || [])].forEach(device => {
+        if (device?.device_id) map.set(device.device_id, device);
+      });
+      deviceMetadata = map;
+    }
+
+    function displayDeviceName(deviceId) {
+      const meta = deviceMetadata.get(deviceId);
+      return String(meta?.display_name || deviceId || '—');
+    }
+
+    function deviceSubtitle(deviceId) {
+      const meta = deviceMetadata.get(deviceId);
+      if (!meta || !meta.display_name || meta.display_name === deviceId) return '';
+      return `<span class="muted">ID: ${esc(deviceId)}</span>`;
+    }
+
+    async function loadWorkspace() {
+      const { data, error } = await client.rpc('get_my_workspace');
+      if (error) throw error;
+      currentWorkspace = data || {};
+      const isAdmin = Boolean(currentWorkspace?.is_platform_admin);
+      document.querySelector('#admin-nav-button').classList.toggle('hidden', !isAdmin);
+      document.querySelector('#admin-panel').classList.toggle('admin-only', !isAdmin);
+      if (isAdmin) await loadAdminCatalog();
+      else {
+        adminCatalog = { organizations: [], projects: [], members: [], devices: [] };
+        rebuildDeviceMetadata();
+      }
+      return currentWorkspace;
+    }
+
+    async function loadAdminCatalog() {
+      if (!currentWorkspace?.is_platform_admin) return;
+      const { data, error } = await client.rpc('admin_get_catalog');
+      if (error) throw error;
+      adminCatalog = data || { organizations: [], projects: [], members: [], devices: [] };
+      rebuildDeviceMetadata();
+      renderAdminPanel();
+    }
+
+    function organizationProject(organizationId) {
+      return (adminCatalog.projects || []).find(project => project.organization_id === organizationId) || null;
+    }
+
+    function organizationMembers(organizationId) {
+      return (adminCatalog.members || []).filter(member => member.organization_id === organizationId);
+    }
+
+    function organizationDeviceCount(organizationId) {
+      const projectIds = new Set((adminCatalog.projects || []).filter(project => project.organization_id === organizationId).map(project => project.id));
+      return (adminCatalog.devices || []).filter(device => projectIds.has(device.project_id)).length;
+    }
+
+    function renderAdminPanel() {
+      if (!currentWorkspace?.is_platform_admin) return;
+      const organizations = adminCatalog.organizations || [];
+      const devices = adminCatalog.devices || [];
+      const assigned = devices.filter(device => device.project_id);
+      const unassigned = devices.filter(device => !device.project_id);
+
+      document.querySelector('#admin-client-count').textContent = organizations.length;
+      document.querySelector('#admin-assigned-count').textContent = assigned.length;
+      document.querySelector('#admin-unassigned-count').textContent = unassigned.length;
+
+      const clientSelect = document.querySelector('#admin-device-client');
+      const previous = clientSelect.value;
+      clientSelect.innerHTML = '<option value="">Selecciona un cliente</option>' + organizations.map(org => {
+        const project = organizationProject(org.id);
+        return project ? `<option value="${esc(project.id)}">${esc(org.name)}</option>` : '';
+      }).join('');
+      if ([...clientSelect.options].some(option => option.value === previous)) clientSelect.value = previous;
+
+      document.querySelector('#admin-client-rows').innerHTML = organizations.length ? organizations.map(org => {
+        const members = organizationMembers(org.id);
+        const users = members.length ? members.map(member => esc(member.email || member.display_name || 'Usuario')).join('<br>') : 'Sin usuario';
+        return `<tr>
+          <td><strong>${esc(org.name)}</strong></td>
+          <td>${users}</td>
+          <td>${esc(org.business_description || '—')}</td>
+          <td>${organizationDeviceCount(org.id)}</td>
+          <td><div class="admin-actions">
+            <button class="admin-mini-button" type="button" data-admin-edit-client="${esc(org.id)}">Editar</button>
+          </div></td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="5" class="admin-empty">Todavía no hay clientes.</td></tr>';
+
+      document.querySelector('#admin-device-rows').innerHTML = devices.length ? devices.map(device => {
+        const last = latestDevices(allRecords).find(record => record.device_id === device.device_id);
+        const project = (adminCatalog.projects || []).find(item => item.id === device.project_id);
+        const organization = project ? organizations.find(item => item.id === project.organization_id) : null;
+        return `<tr>
+          <td><strong>${esc(device.device_id)}</strong></td>
+          <td>${esc(device.display_name || device.device_id)}</td>
+          <td>${organization ? `<span class="admin-chip">${esc(organization.name)}</span>` : '<span class="admin-chip unassigned">Sin asignar</span>'}</td>
+          <td>${esc(device.description || '—')}</td>
+          <td>${last ? esc(formatTime(last.received_at)) : 'Sin telemetría'}</td>
+          <td><div class="admin-actions">
+            <button class="admin-mini-button" type="button" data-admin-edit-device="${esc(device.device_id)}">Gestionar</button>
+            ${device.project_id ? `<button class="admin-mini-button danger" type="button" data-admin-unassign-device="${esc(device.device_id)}">Retirar</button>` : ''}
+          </div></td>
+        </tr>`;
+      }).join('') : '<tr><td colspan="6" class="admin-empty">Todavía no hay dispositivos.</td></tr>';
+    }
+
+    function clearAdminDeviceForm() {
+      document.querySelector('#admin-device-form').reset();
+      document.querySelector('#admin-device-id').readOnly = false;
+      document.querySelector('#admin-device-status').textContent = '';
+    }
+
+    function loadDeviceIntoAdminForm(deviceId) {
+      const device = (adminCatalog.devices || []).find(item => item.device_id === deviceId);
+      if (!device) return;
+      document.querySelector('#admin-device-id').value = device.device_id;
+      document.querySelector('#admin-device-id').readOnly = true;
+      document.querySelector('#admin-device-client').value = device.project_id || '';
+      document.querySelector('#admin-device-name').value = device.display_name || '';
+      document.querySelector('#admin-device-description').value = device.description || '';
+      showPanel('admin-panel');
+      document.querySelector('#admin-device-name').focus();
+    }
+
     function renderOverview() {
       const devices = latestDevices(allRecords);
       const now = Date.now();
@@ -1092,7 +1462,7 @@
           ? `<span class="pill${upsClass}">${esc(upsStatus)}</span>`
           : `<span class="pill${upsClass}">Último: ${esc(upsStatus)}</span><span class="stale-note">Sin confirmar actualmente</span>`;
         return `<tr class="device-row${connection.connected ? '' : ' stale-row'}">
-          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(latest.device_id)}</button></td>
+          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(displayDeviceName(latest.device_id))}</button>${deviceSubtitle(latest.device_id)}</td>
           <td><span class="pill${connectionClass}">${connectionLabel}</span></td>
           <td>${upsStatusCell}</td>
           <td>${esc(formatTime(latest.received_at))}<br><span class="${connection.connected ? 'muted' : 'stale-note'}">${connection.connected ? 'Recibido hace' : 'Sin datos desde hace'} ${esc(formatDuration(connection.ageMs))}</span></td>
@@ -1112,7 +1482,7 @@
       const deviceIds = devices.map(record => record.device_id);
       const previousSelection = deviceSelect.value;
       deviceSelect.innerHTML = deviceIds.length
-        ? deviceIds.map(device => `<option value="${esc(device)}">${esc(device)}</option>`).join('')
+        ? deviceIds.map(device => `<option value="${esc(device)}">${esc(displayDeviceName(device))}</option>`).join('')
         : '<option value="">Sin dispositivos</option>';
       deviceSelect.value = deviceIds.includes(previousSelection) ? previousSelection : (deviceIds[0] ?? '');
     }
@@ -1275,8 +1645,10 @@
           if (data.length < 1000) break;
         }
         allRecords = fullHistory ? collected : mergeLatestRecords(collected);
+        rebuildDeviceMetadata();
         renderOverview();
         renderDeviceDetail();
+        if (currentWorkspace?.is_platform_admin) renderAdminPanel();
         document.querySelector('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones cargadas`;
         document.querySelector('#update-state').textContent = 'Situaciones que requieren revisión';
         setServerState(true, 'Servidor conectado');
@@ -1341,6 +1713,113 @@
         setCollapse(section, !section.classList.contains('is-collapsed'));
       });
     });
+
+    document.querySelector('#admin-refresh').addEventListener('click', async () => {
+      document.querySelector('#admin-device-status').textContent = 'Actualizando…';
+      try {
+        await loadAdminCatalog();
+        document.querySelector('#admin-device-status').textContent = 'Catálogo actualizado.';
+      } catch (error) {
+        document.querySelector('#admin-device-status').textContent = error.message;
+      }
+    });
+
+    document.querySelector('#admin-client-create-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!currentWorkspace?.is_platform_admin || !currentSession?.access_token) return;
+      const status = document.querySelector('#admin-client-create-status');
+      status.textContent = 'Creando cliente…';
+      try {
+        const response = await fetch('/api/admin/clients', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentSession.access_token}`
+          },
+          body: JSON.stringify({
+            company_name: document.querySelector('#admin-new-company').value,
+            display_name: document.querySelector('#admin-new-contact').value,
+            email: document.querySelector('#admin-new-email').value,
+            password: document.querySelector('#admin-new-password').value,
+            business_description: document.querySelector('#admin-new-description').value
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        event.target.reset();
+        status.textContent = 'Cliente creado correctamente.';
+        await loadWorkspace();
+        await loadRecords(true);
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    document.querySelector('#admin-client-rows').addEventListener('click', async event => {
+      const button = event.target.closest('[data-admin-edit-client]');
+      if (!button) return;
+      const org = (adminCatalog.organizations || []).find(item => item.id === button.dataset.adminEditClient);
+      if (!org) return;
+      const name = window.prompt('Nombre del cliente:', org.name);
+      if (name === null) return;
+      const description = window.prompt('Descripción del cliente:', org.business_description || '');
+      if (description === null) return;
+      try {
+        const { error } = await client.rpc('admin_update_client', {
+          p_organization_id: org.id,
+          p_name: name,
+          p_business_description: description
+        });
+        if (error) throw error;
+        await loadWorkspace();
+        await loadRecords(true);
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    document.querySelector('#admin-device-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const status = document.querySelector('#admin-device-status');
+      status.textContent = 'Guardando…';
+      try {
+        const { error } = await client.rpc('admin_save_device', {
+          p_device_id: document.querySelector('#admin-device-id').value,
+          p_project_id: document.querySelector('#admin-device-client').value,
+          p_display_name: document.querySelector('#admin-device-name').value,
+          p_description: document.querySelector('#admin-device-description').value
+        });
+        if (error) throw error;
+        status.textContent = 'Equipo guardado correctamente.';
+        clearAdminDeviceForm();
+        await loadWorkspace();
+        await loadRecords(true);
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    document.querySelector('#admin-device-clear').addEventListener('click', clearAdminDeviceForm);
+
+    document.querySelector('#admin-device-rows').addEventListener('click', async event => {
+      const edit = event.target.closest('[data-admin-edit-device]');
+      if (edit) {
+        loadDeviceIntoAdminForm(edit.dataset.adminEditDevice);
+        return;
+      }
+      const unassign = event.target.closest('[data-admin-unassign-device]');
+      if (!unassign) return;
+      if (!window.confirm(`¿Retirar ${unassign.dataset.adminUnassignDevice} del cliente actual?`)) return;
+      try {
+        const { error } = await client.rpc('admin_unassign_device', { p_device_id: unassign.dataset.adminUnassignDevice });
+        if (error) throw error;
+        await loadWorkspace();
+        await loadRecords(true);
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
     logout.addEventListener('click', () => client.auth.signOut());
     document.querySelector('#refresh').addEventListener('click', () => loadRecords(true));
 
@@ -1349,8 +1828,24 @@
       message.textContent = 'Configuración incompleta en Render: ' + config.error;
     } else {
       client.auth.onAuthStateChange((_event, session) => {
+        currentSession = session || null;
         showSession(Boolean(session));
-        if (session) setTimeout(() => loadRecords(true), 0);
+        if (session) {
+          setTimeout(async () => {
+            try {
+              await loadWorkspace();
+              await loadRecords(true);
+            } catch (error) {
+              document.querySelector('#last-update').textContent = 'Error de acceso: ' + error.message;
+              setServerState(false, 'Servidor sin conexión');
+            }
+          }, 0);
+        } else {
+          currentWorkspace = null;
+          adminCatalog = { organizations: [], projects: [], members: [], devices: [] };
+          rebuildDeviceMetadata();
+          document.querySelector('#admin-nav-button').classList.add('hidden');
+        }
       });
       client.channel('telemetry-live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'telemetry' }, () => loadRecords(false)).subscribe();
       setInterval(() => {
