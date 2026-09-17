@@ -15,7 +15,6 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 
 
 def environment_value(name: str) -> str:
-    """Lee una variable sin conservar espacios o saltos de linea accidentales."""
     return os.environ.get(name, "").strip()
 
 
@@ -36,7 +35,6 @@ def missing_settings() -> list[str]:
 
 
 def supabase_headers(prefer: str | None = None) -> dict[str, str]:
-    """Admite tanto la nueva secret key como la service_role JWT heredada."""
     headers = {
         "apikey": SUPABASE_SECRET_KEY,
         "Content-Type": "application/json",
@@ -46,6 +44,66 @@ def supabase_headers(prefer: str | None = None) -> dict[str, str]:
     if prefer:
         headers["Prefer"] = prefer
     return headers
+
+
+def supabase_auth_admin_headers() -> dict[str, str]:
+    # Los endpoints Auth Admin siempre se ejecutan únicamente desde este servidor.
+    # Supabase recomienda usar la secret key/service_role exclusivamente del lado servidor.
+    return {
+        "apikey": SUPABASE_SECRET_KEY,
+        "Authorization": f"Bearer {SUPABASE_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
+
+
+def user_headers(access_token: str) -> dict[str, str]:
+    return {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json",
+    }
+
+
+def bearer_token() -> str:
+    authorization = request.headers.get("Authorization", "").strip()
+    if not authorization.lower().startswith("bearer "):
+        return ""
+    return authorization[7:].strip()
+
+
+def current_supabase_user(access_token: str) -> dict | None:
+    if not access_token:
+        return None
+    try:
+        response = requests.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers=user_headers(access_token),
+            timeout=12,
+        )
+    except requests.RequestException:
+        return None
+    if not response.ok:
+        return None
+    data = response.json()
+    return data if isinstance(data, dict) else None
+
+
+def caller_is_platform_admin(access_token: str) -> bool:
+    try:
+        response = requests.post(
+            f"{SUPABASE_URL}/rest/v1/rpc/is_platform_admin",
+            headers=user_headers(access_token),
+            json={},
+            timeout=12,
+        )
+    except requests.RequestException:
+        return False
+    if not response.ok:
+        return False
+    try:
+        return response.json() is True
+    except ValueError:
+        return False
 
 
 def parse_decimal(value: object, field: str, minimum: str, maximum: str) -> float:
@@ -110,7 +168,6 @@ RESERVED_PAYLOAD_FIELDS = {
 def collect_dynamic_metrics(
     payload: dict, metrics: dict[str, float]
 ) -> dict[str, float]:
-    """Conserva mediciones numericas adicionales sin cambiar la tabla."""
     collected = dict(metrics)
     for raw_key, raw_value in payload.items():
         key = str(raw_key).strip().lower()
@@ -156,12 +213,14 @@ def parse_telemetry(payload: dict) -> dict:
         sequence = int(payload.get("sequence"))
     except (TypeError, ValueError):
         raise ValueError("sequence debe ser un numero entero") from None
+
     if sequence < 0 or sequence > 9_223_372_036_854_775_807:
         raise ValueError("sequence esta fuera del rango permitido")
 
     metric_values = collect_dynamic_metrics(
         payload, parse_metric_values(payload.get("metrics"))
     )
+
     record: dict = {
         "received_at": datetime.now(timezone.utc).isoformat(),
         "device_id": device_id,
@@ -180,6 +239,7 @@ def parse_telemetry(payload: dict) -> dict:
         "battery_voltage": ("0", "999.99"),
         "load_percent": ("0", "100"),
     }
+
     for field, (minimum, maximum) in ups_fields.items():
         value = payload.get(field, metric_values.get(field))
         if value is None or str(value).strip() == "":
@@ -270,11 +330,138 @@ def health():
     ), 200
 
 
+@app.post("/api/admin/clients")
+def create_client():
+    """Crea una cuenta Auth y, dentro de la sesión del admin, su cliente/espacio UPS."""
+    if not SUPABASE_URL or not SUPABASE_SECRET_KEY or not SUPABASE_PUBLISHABLE_KEY:
+        return jsonify({"ok": False, "error": "Servidor sin configurar"}), 503
+
+    access_token = bearer_token()
+    user = current_supabase_user(access_token)
+    if not user:
+        return jsonify({"ok": False, "error": "Sesión inválida"}), 401
+    if not caller_is_platform_admin(access_token):
+        return jsonify({"ok": False, "error": "Acceso exclusivo del administrador WiMobile"}), 403
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({"ok": False, "error": "Solicitud inválida"}), 400
+
+    email = str(body.get("email", "")).strip().lower()
+    password = str(body.get("password", ""))
+    display_name = str(body.get("display_name", "")).strip()
+    company_name = str(body.get("company_name", "")).strip()
+    business_description = str(body.get("business_description", "")).strip()
+
+    if "@" not in email or len(email) > 200:
+        return jsonify({"ok": False, "error": "Correo no válido"}), 400
+    if len(password) < 8 or len(password) > 100:
+        return jsonify({"ok": False, "error": "La contraseña temporal debe tener entre 8 y 100 caracteres"}), 400
+    if not 2 <= len(display_name) <= 100:
+        return jsonify({"ok": False, "error": "Nombre del responsable no válido"}), 400
+    if not 2 <= len(company_name) <= 120:
+        return jsonify({"ok": False, "error": "Nombre del cliente no válido"}), 400
+    if not 2 <= len(business_description) <= 1000:
+        return jsonify({"ok": False, "error": "Descripción no válida"}), 400
+
+    created_user_id = None
+
+    try:
+        auth_response = requests.post(
+            f"{SUPABASE_URL}/auth/v1/admin/users",
+            headers=supabase_auth_admin_headers(),
+            json={
+                "email": email,
+                "password": password,
+                "email_confirm": True,
+                "user_metadata": {"full_name": display_name},
+            },
+            timeout=15,
+        )
+    except requests.RequestException:
+        return jsonify({"ok": False, "error": "No fue posible crear la cuenta del cliente"}), 502
+
+    if not auth_response.ok:
+        app.logger.error(
+            "Auth Admin create user %s: %s",
+            auth_response.status_code,
+            auth_response.text[:700],
+        )
+        return jsonify(
+            {
+                "ok": False,
+                "error": "No se pudo crear la cuenta. Revisa si el correo ya existe.",
+            }
+        ), 400
+
+    auth_payload = auth_response.json()
+    created_user = auth_payload.get("user") if isinstance(auth_payload, dict) else None
+    if not created_user and isinstance(auth_payload, dict) and auth_payload.get("id"):
+        created_user = auth_payload
+
+    if not isinstance(created_user, dict) or not created_user.get("id"):
+        return jsonify({"ok": False, "error": "Supabase creó la cuenta pero no devolvió su ID"}), 502
+
+    created_user_id = created_user["id"]
+
+    try:
+        rpc_response = requests.post(
+            f"{SUPABASE_URL}/rest/v1/rpc/admin_create_client_for_user",
+            headers=user_headers(access_token),
+            json={
+                "p_user_id": created_user_id,
+                "p_display_name": display_name,
+                "p_company_name": company_name,
+                "p_business_description": business_description,
+            },
+            timeout=15,
+        )
+    except requests.RequestException:
+        rpc_response = None
+
+    if rpc_response is None or not rpc_response.ok:
+        detail = ""
+        if rpc_response is not None:
+            detail = rpc_response.text[:700]
+            app.logger.error(
+                "admin_create_client_for_user %s: %s",
+                rpc_response.status_code,
+                detail,
+            )
+
+        # Rollback de la cuenta Auth si falló la creación del cliente.
+        try:
+            requests.delete(
+                f"{SUPABASE_URL}/auth/v1/admin/users/{created_user_id}",
+                headers=supabase_auth_admin_headers(),
+                timeout=12,
+            )
+        except requests.RequestException:
+            app.logger.exception("No fue posible revertir la cuenta Auth %s", created_user_id)
+
+        return jsonify(
+            {
+                "ok": False,
+                "error": "No se pudo crear la estructura del cliente. No se conservará la cuenta parcial.",
+            }
+        ), 400
+
+    return jsonify(
+        {
+            "ok": True,
+            "user_id": created_user_id,
+            "email": email,
+            "catalog": rpc_response.json(),
+        }
+    ), 201
+
+
 @app.post("/api/telemetry")
 def receive_telemetry():
     provided_key = request.headers.get("X-API-Key", "").strip()
     if not INGEST_API_KEY or not hmac.compare_digest(provided_key, INGEST_API_KEY):
         return jsonify({"ok": False, "error": "No autorizado"}), 401
+
     if not SUPABASE_URL or not SUPABASE_SECRET_KEY:
         return jsonify({"ok": False, "error": "Servidor sin configurar"}), 503
 
@@ -302,6 +489,7 @@ def receive_telemetry():
 
     if response.status_code == 409:
         return jsonify({"ok": False, "error": "Secuencia duplicada"}), 409
+
     if not response.ok:
         app.logger.error(
             "Supabase respondio %s: %s",
@@ -314,6 +502,7 @@ def receive_telemetry():
 
     saved_rows = response.json()
     saved = saved_rows[0] if isinstance(saved_rows, list) and saved_rows else {}
+
     return jsonify(
         {
             "ok": True,
