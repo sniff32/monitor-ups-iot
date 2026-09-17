@@ -647,6 +647,97 @@
       .admin-form-grid .field-wide { grid-column: auto; }
     }
 
+  
+    /* Mis dispositivos */
+    .my-devices-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .my-device-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(9, 70, 105, .05);
+    }
+    .my-device-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .my-device-title {
+      margin: 0;
+      color: var(--brand-blue-deep);
+      font-size: 19px;
+      line-height: 1.15;
+    }
+    .my-device-id {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: #eef7fb;
+      color: #466b80;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .03em;
+    }
+    .my-device-description {
+      min-height: 38px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .my-device-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .my-device-meta-box {
+      padding: 10px 12px;
+      border: 1px solid #deebf1;
+      border-radius: 12px;
+      background: #fbfdfe;
+    }
+    .my-device-meta-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 4px;
+    }
+    .my-device-meta-box strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+    .my-device-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      padding-top: 2px;
+    }
+    .my-device-empty {
+      grid-column: 1 / -1;
+      padding: 36px 20px;
+      border: 1px dashed #bfd4df;
+      border-radius: 18px;
+      background: rgba(255,255,255,.65);
+      color: var(--muted);
+      text-align: center;
+    }
+    @media (max-width: 900px) {
+      .my-devices-grid { grid-template-columns: 1fr; }
+      .my-device-meta { grid-template-columns: 1fr; }
+    }
+
   </style>
 </head>
 <body>
@@ -735,6 +826,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             <span>Resumen general</span>
           </button>
+          <button class="nav-button" type="button" data-panel="devices-panel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+            <span>Mis dispositivos</span>
+          </button>
           <button class="nav-button" type="button" data-panel="device-panel">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"/><path d="M2 21h20"/></svg>
             <span>Estadísticas del equipo</span>
@@ -777,6 +872,21 @@
                 </table>
               </div>
             </section>
+          </section>
+
+          <section id="devices-panel" class="dashboard-panel hidden">
+            <div class="page-heading">
+              <div>
+                <span class="page-kicker">Equipos asignados</span>
+                <h2>Mis dispositivos</h2>
+                <p>Consulta los equipos asociados a tu cuenta. Aquí puedes identificar el ID físico del equipo y personalizar el nombre con el que aparece en la plataforma.</p>
+              </div>
+              <button id="devices-refresh" class="app-button" type="button">Actualizar dispositivos</button>
+            </div>
+
+            <div id="my-devices-grid" class="my-devices-grid">
+              <div class="my-device-empty">Cargando dispositivos…</div>
+            </div>
           </section>
 
           <section id="device-panel" class="dashboard-panel hidden">
@@ -1435,6 +1545,102 @@
       document.querySelector('#admin-device-name').focus();
     }
 
+
+    function workspaceDevices() {
+      return (currentWorkspace?.projects || []).flatMap(project =>
+        (project.devices || []).map(device => ({
+          ...device,
+          project_id: project.id,
+          organization_id: project.organization_id,
+          organization_name: project.organization_name
+        }))
+      );
+    }
+
+    function renderMyDevices() {
+      const container = document.querySelector('#my-devices-grid');
+      if (!container) return;
+
+      const devices = workspaceDevices();
+      const latestMap = new Map(
+        latestDevices(allRecords).map(record => [record.device_id, record])
+      );
+      const now = Date.now();
+
+      container.innerHTML = devices.length ? devices.map(device => {
+        const latest = latestMap.get(device.device_id);
+        const connection = latest ? connectionState(latest, now) : { connected: false };
+        const connectionLabel = latest
+          ? (connection.connected ? 'Comunicando' : 'Sin comunicación')
+          : 'Sin telemetría';
+        const connectionClass = latest && connection.connected ? '' : ' offline';
+
+        return `<article class="my-device-card">
+          <div class="my-device-head">
+            <div>
+              <h3 class="my-device-title">${esc(device.display_name || device.device_id)}</h3>
+              <span class="my-device-id">ID del equipo: ${esc(device.device_id)}</span>
+            </div>
+            <span class="pill${connectionClass}">${esc(connectionLabel)}</span>
+          </div>
+
+          <div class="my-device-description">
+            ${esc(device.description || 'Sin descripción asignada.')}
+          </div>
+
+          <div class="my-device-meta">
+            <div class="my-device-meta-box">
+              <span>Último dato</span>
+              <strong>${latest ? esc(formatTime(latest.received_at)) : 'Sin registros'}</strong>
+            </div>
+            <div class="my-device-meta-box">
+              <span>Estado reportado</span>
+              <strong>${latest ? esc(readableUpsStatus(latest)) : 'Sin información'}</strong>
+            </div>
+          </div>
+
+          <div class="my-device-actions">
+            <button class="app-button secondary" type="button" data-client-rename-device="${esc(device.device_id)}">Cambiar nombre</button>
+            <button class="app-button" type="button" data-client-open-device="${esc(device.device_id)}">Ver estadísticas</button>
+          </div>
+        </article>`;
+      }).join('') : '<div class="my-device-empty">No tienes dispositivos asignados.</div>';
+    }
+
+    async function renameOwnDevice(deviceId) {
+      const device = workspaceDevices().find(item => item.device_id === deviceId);
+      if (!device) return;
+
+      const nextName = window.prompt(
+        'Nombre que quieres mostrar para este equipo:',
+        device.display_name || device.device_id
+      );
+
+      if (nextName === null) return;
+      const cleanName = nextName.trim();
+
+      if (cleanName.length < 2 || cleanName.length > 120) {
+        window.alert('El nombre debe tener entre 2 y 120 caracteres.');
+        return;
+      }
+
+      try {
+        const { error } = await client.rpc('client_update_device_name', {
+          p_device_id: deviceId,
+          p_display_name: cleanName
+        });
+        if (error) throw error;
+
+        await loadWorkspace();
+        renderMyDevices();
+        renderOverview();
+        renderDeviceDetail();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    }
+
+
     function renderOverview() {
       const devices = latestDevices(allRecords);
       const now = Date.now();
@@ -1462,7 +1668,7 @@
           ? `<span class="pill${upsClass}">${esc(upsStatus)}</span>`
           : `<span class="pill${upsClass}">Último: ${esc(upsStatus)}</span><span class="stale-note">Sin confirmar actualmente</span>`;
         return `<tr class="device-row${connection.connected ? '' : ' stale-row'}">
-          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(displayDeviceName(latest.device_id))}</button>${deviceSubtitle(latest.device_id)}</td>
+          <td><button class="device-name-button" type="button" data-open-device="${esc(latest.device_id)}">${esc(displayDeviceName(latest.device_id))}</button></td>
           <td><span class="pill${connectionClass}">${connectionLabel}</span></td>
           <td>${upsStatusCell}</td>
           <td>${esc(formatTime(latest.received_at))}<br><span class="${connection.connected ? 'muted' : 'stale-note'}">${connection.connected ? 'Recibido hace' : 'Sin datos desde hace'} ${esc(formatDuration(connection.ageMs))}</span></td>
@@ -1576,7 +1782,7 @@
       const alerts = currentAlerts(latest, now);
       const alertHistory = buildAlertHistory(allDeviceRecords, disconnections);
 
-      document.querySelector('#detail-device').textContent = deviceId;
+      document.querySelector('#detail-device').textContent = displayDeviceName(deviceId);
       document.querySelector('#detail-connection').textContent = connection.connected ? 'Comunicando datos' : 'Sin comunicación';
       document.querySelector('#detail-downtime').textContent = activeDisconnection
         ? `Hace ${formatDuration(activeDisconnection.durationMs)} que no se reciben datos`
@@ -1673,6 +1879,7 @@
         allRecords = fullHistory ? collected : mergeLatestRecords(collected);
         rebuildDeviceMetadata();
         renderOverview();
+        renderMyDevices();
         renderDeviceDetail();
         if (currentWorkspace?.is_platform_admin) renderAdminPanel();
         document.querySelector('#last-update').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-MX')} · ${allRecords.length} mediciones cargadas`;
@@ -1843,6 +2050,30 @@
         await loadRecords(true);
       } catch (error) {
         window.alert(error.message);
+      }
+    });
+
+
+    document.querySelector('#devices-refresh').addEventListener('click', async () => {
+      try {
+        await loadWorkspace();
+        await loadRecords(true);
+        renderMyDevices();
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+
+    document.querySelector('#my-devices-grid').addEventListener('click', event => {
+      const renameButton = event.target.closest('[data-client-rename-device]');
+      if (renameButton) {
+        renameOwnDevice(renameButton.dataset.clientRenameDevice);
+        return;
+      }
+
+      const openButton = event.target.closest('[data-client-open-device]');
+      if (openButton) {
+        openDeviceDetail(openButton.dataset.clientOpenDevice);
       }
     });
 
