@@ -1637,13 +1637,39 @@
       try {
         const collected = [];
         const pages = fullHistory ? 5 : 1;
+        const isAdmin = Boolean(currentWorkspace?.is_platform_admin);
+        const allowedDeviceIds = new Set(
+          (currentWorkspace?.projects || []).flatMap(project =>
+            (project.devices || []).map(device => device.device_id)
+          )
+        );
+
         for (let page = 0; page < pages; page += 1) {
+          if (!isAdmin && allowedDeviceIds.size === 0) break;
+
           const start = page * 1000;
-          const { data, error } = await client.from('telemetry').select('*').order('received_at', { ascending: false }).range(start, start + 999);
+          let query = client
+            .from('telemetry')
+            .select('*')
+            .order('received_at', { ascending: false })
+            .range(start, start + 999);
+
+          // Defensa adicional de interfaz: una cuenta cliente solicita únicamente
+          // la telemetría de dispositivos que tiene asignados en get_my_workspace().
+          // RLS en Supabase sigue siendo la barrera de seguridad principal.
+          if (!isAdmin) query = query.in('device_id', [...allowedDeviceIds]);
+
+          const { data, error } = await query;
           if (error) throw error;
-          collected.push(...data);
+
+          const visibleData = isAdmin
+            ? data
+            : data.filter(record => allowedDeviceIds.has(record.device_id));
+
+          collected.push(...visibleData);
           if (data.length < 1000) break;
         }
+
         allRecords = fullHistory ? collected : mergeLatestRecords(collected);
         rebuildDeviceMetadata();
         renderOverview();
